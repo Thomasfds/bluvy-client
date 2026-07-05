@@ -23,6 +23,7 @@ import { TranslationService } from '../../core/i18n/translation.service';
     TranslatePipe,
   ],
   templateUrl: './setup-sync.page.html',
+  styleUrls: ['./setup-sync.page.scss'],
 })
 export class SetupSyncPage {
   private syncSvc = inject(SyncService);

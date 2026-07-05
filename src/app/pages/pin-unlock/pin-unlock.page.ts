@@ -22,6 +22,7 @@ import { TranslationService } from '../../core/i18n/translation.service';
     TranslatePipe,
   ],
   templateUrl: './pin-unlock.page.html',
+  styleUrls: ['./pin-unlock.page.scss'],
 })
 export class PinUnlockPage implements OnInit, OnDestroy {
   private syncSvc     = inject(SyncService);

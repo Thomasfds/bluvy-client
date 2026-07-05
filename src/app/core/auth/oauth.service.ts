@@ -180,6 +180,28 @@ export class OAuthService {
     this._session = null;
   }
 
+<<<<<<< Updated upstream
+=======
+  /**
+   * Revokes the persisted AT Protocol OAuth session (the client library's own
+   * IndexedDB-backed storage), not just the in-memory reference. Without this,
+   * logout only clears the app's own JWTs — the OAuth session survives and
+   * gets silently restored by tryHandleInit()/tryRestore() on next app load.
+   *
+   * client.revoke() is a raw network call to the PDS with no built-in timeout
+   * (same as getServiceAuthToken() below) — bounded here so a slow/unreachable
+   * PDS can't hang the whole logout flow.
+   */
+  async logout(sub: string): Promise<void> {
+    const client = await this.getClient();
+    await Promise.race([
+      client.revoke(sub).catch(() => {}),
+      new Promise<void>((resolve) => setTimeout(resolve, 5000)),
+    ]);
+    this._session = null;
+  }
+
+>>>>>>> Stashed changes
   private async signInNative(client: BrowserOAuthClient, handle: string): Promise<void> {
     // authorize() returns the URL and stores PKCE/state/redirect_uri in session storage.
     const authUrl = await client.authorize(handle, { scope: OAUTH_SCOPE });

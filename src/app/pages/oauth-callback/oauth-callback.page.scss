@@ -1,0 +1,102 @@
+.login-content {
+  --background: var(--color-surface);
+}
+
+.login-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  padding: 0 var(--space-6) var(--space-8);
+}
+
+.login-page__hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 64px 0 var(--space-8);
+  gap: var(--space-3);
+}
+
+.login-logo {
+  &__img {
+    width: 64px;
+    height: 64px;
+  }
+}
+
+.login-page__title {
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-bold);
+  color: var(--color-text-primary);
+  margin: 0;
+  font-family: var(--font-sans);
+  letter-spacing: -0.5px;
+}
+
+.login-page__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.form-error {
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  color: var(--color-danger);
+  margin: 0;
+  padding-left: var(--space-1);
+}
+
+.login-btn {
+  width: 100%;
+  padding: 14px var(--space-4);
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-full);
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+  margin-top: var(--space-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 50px;
+  transition: opacity var(--duration-fast);
+  letter-spacing: 0.01em;
+
+  &:disabled { opacity: 0.5; cursor: default; }
+  &:not(:disabled):active { opacity: 0.85; }
+}
+
+.loading-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 200px;
+}
+
+.loading-text {
+  margin-top: var(--space-3);
+  color: var(--color-text-secondary);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+}
+
+.spinner {
+  width: 28px;
+  height: 28px;
+  border: 2.5px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: var(--radius-full);
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner { animation: none; }
+}

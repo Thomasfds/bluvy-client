@@ -7,6 +7,7 @@ import { OAuthService } from '../../core/auth/oauth.service';
 @Component({
   selector: 'app-oauth-callback',
   templateUrl: 'oauth-callback.page.html',
+  styleUrls: ['oauth-callback.page.scss'],
   standalone: true,
   imports: [IonContent, RouterLink],
 })

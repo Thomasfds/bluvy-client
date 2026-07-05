@@ -131,6 +131,8 @@ export class AuthService {
     this.syncSvc.reset();
     this.contactsSvc.reset();
 
+    const did = this.currentUser()?.did ?? null;
+
     try {
       const token = await this.tokenRepo.getAccessToken();
       if (token) {
@@ -138,6 +140,12 @@ export class AuthService {
       }
     } catch {
       // Clear local state regardless of server response.
+    }
+
+    if (did) {
+      await this.oauthSvc.logout(did).catch(() => {});
+    } else {
+      this.oauthSvc.clearSession();
     }
 
     this.socketSvc.disconnect();

@@ -185,17 +185,10 @@ export class OAuthService {
    * IndexedDB-backed storage), not just the in-memory reference. Without this,
    * logout only clears the app's own JWTs — the OAuth session survives and
    * gets silently restored by tryHandleInit()/tryRestore() on next app load.
-   *
-   * client.revoke() is a raw network call to the PDS with no built-in timeout
-   * (same as getServiceAuthToken() below) — bounded here so a slow/unreachable
-   * PDS can't hang the whole logout flow.
    */
   async logout(sub: string): Promise<void> {
     const client = await this.getClient();
-    await Promise.race([
-      client.revoke(sub).catch(() => {}),
-      new Promise<void>((resolve) => setTimeout(resolve, 5000)),
-    ]);
+    await client.revoke(sub);
     this._session = null;
   }
 

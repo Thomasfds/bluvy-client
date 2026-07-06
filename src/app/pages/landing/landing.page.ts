@@ -9,6 +9,7 @@ import { SeoService } from '../../core/services/seo.service';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
 import { TranslationService } from '../../core/i18n/translation.service';
 import { ROUTES } from '../../core/routes';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-landing',
@@ -25,6 +26,7 @@ export class LandingPage implements OnInit {
   protected i18n   = inject(TranslationService);
   private apiClient = inject(ApiClientService);
 
+  readonly version = environment.version;
   inviter: { displayName: string; handle: string; avatarUrl: string | null } | null = null;
   showFeatures = false;
 
@@ -61,7 +63,7 @@ export class LandingPage implements OnInit {
       await this.router.navigate([ROUTES.login]);
       return;
     }
-    if (Capacitor.isNativePlatform()) {
+    if (Capacitor.isNativePlatform() && !cached) {
       await this.router.navigate([ROUTES.login]);
       return;
     }

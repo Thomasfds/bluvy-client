@@ -5,6 +5,7 @@ import { Browser } from '@capacitor/browser';
 import { BrowserOAuthClient, OAuthSession } from '@atproto/oauth-client-browser';
 import { Agent } from '@atproto/api';
 import { environment } from '../../../environments/environment';
+import { capacitorOAuthFetch } from './oauth-fetch.adapter';
 
 let _client: BrowserOAuthClient | null = null;
 
@@ -27,6 +28,7 @@ export class OAuthService {
       _client = await BrowserOAuthClient.load({
         clientId:       this.resolveClientId(),
         handleResolver: 'https://api.bsky.app',
+        fetch:          capacitorOAuthFetch,
       });
     }
     return _client;

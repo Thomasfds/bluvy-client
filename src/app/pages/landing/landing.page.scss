@@ -2,6 +2,38 @@
   display: flex;
   flex-direction: column;
   height: 100%;
+
+  // Variables mapping for theme synchronization (Light mode defaults)
+  --l-card-bg: rgba(255, 255, 255, 0.85);
+  --l-badge-bg: rgba(14, 165, 233, 0.06);
+  --l-badge-border: rgba(14, 165, 233, 0.15);
+  --l-accent: var(--color-primary);
+  --l-sec-icon-bg: rgba(16, 185, 129, 0.08);
+  --l-sec-icon-color: #10b981;
+}
+
+@mixin dark-theme-variables {
+  --l-card-bg: rgba(30, 41, 59, 0.6);
+  --l-badge-bg: rgba(56, 189, 248, 0.08);
+  --l-badge-border: rgba(56, 189, 248, 0.25);
+  --l-accent: #38bdf8;
+  --l-sec-icon-bg: rgba(16, 185, 129, 0.15);
+}
+
+@media (prefers-color-scheme: dark) {
+  :host { @include dark-theme-variables; }
+}
+:host-context(html.theme-dark) {
+  :host { @include dark-theme-variables; }
+}
+@media (prefers-color-scheme: dark) {
+  :host-context(html.theme-light) {
+    --l-card-bg: rgba(255, 255, 255, 0.85);
+    --l-badge-bg: rgba(14, 165, 233, 0.06);
+    --l-badge-border: rgba(14, 165, 233, 0.15);
+    --l-accent: var(--color-primary);
+    --l-sec-icon-bg: rgba(16, 185, 129, 0.08);
+  }
 }
 
 ion-content {
@@ -11,13 +43,13 @@ ion-content {
 .landing {
   display: flex;
   flex-direction: column;
+  min-height: 100%;
   background: var(--color-bg);
   color: var(--color-text-primary);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  box-sizing: border-box;
 }
 
-// ── Header (Ultra-minimalist) ────────────────────────────────────────────────
+// ── Header ───────────────────────────────────────────────────────────────────
 
 .landing-header {
   background: var(--color-surface);
@@ -85,7 +117,7 @@ ion-content {
   font-size: 10px;
 }
 
-// ── Generic Section Layouts ──────────────────────────────────────────────────
+// ── Grid & Structure ─────────────────────────────────────────────────────────
 
 .section-inner {
   max-width: 1100px;
@@ -94,8 +126,6 @@ ion-content {
   width: 100%;
   box-sizing: border-box;
 }
-
-// ── SECTION 1: HERO ──────────────────────────────────────────────────────────
 
 .hero-section {
   padding: var(--space-12) 0;
@@ -126,13 +156,13 @@ ion-content {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: rgba(var(--color-primary-rgb, 14, 165, 233), 0.06);
-  border: 1px solid rgba(var(--color-primary-rgb, 14, 165, 233), 0.15);
+  background: var(--l-badge-bg);
+  border: 1px solid var(--l-badge-border);
   border-radius: var(--radius-full);
   padding: 6px 14px;
   font-size: 12px;
   font-weight: 700;
-  color: var(--color-primary);
+  color: var(--l-accent);
   letter-spacing: 0.01em;
 
   ion-icon {
@@ -290,7 +320,7 @@ ion-content {
   }
   span {
     font-size: 11px;
-    color: #10b981; // Green
+    color: #10b981;
     font-weight: 600;
   }
 }
@@ -312,7 +342,7 @@ ion-content {
     margin: 0;
     padding: 10px 14px;
     font-size: 13px;
-    line-height: 1.4;
+    line-height: 1.45;
     border-radius: 16px;
     text-align: left;
   }
@@ -364,7 +394,7 @@ ion-content {
   align-items: center;
 }
 
-// ── SECTIONS 2, 3, 4: PRODUCT FEATURES ────────────────────────────────────────
+// ── PRODUCT FEATURES ─────────────────────────────────────────────────────────
 
 .feature-section {
   padding: 80px 0;
@@ -388,13 +418,8 @@ ion-content {
     gap: var(--space-16);
 
     &--reverse {
-      .feature-content {
-        grid-column: 2;
-      }
-      .feature-visual {
-        grid-column: 1;
-        grid-row: 1;
-      }
+      .feature-content { grid-column: 2; }
+      .feature-visual { grid-column: 1; grid-row: 1; }
     }
   }
 }
@@ -413,9 +438,9 @@ ion-content {
   justify-content: center;
   width: 42px;
   height: 42px;
-  background: rgba(var(--color-primary-rgb, 14, 165, 233), 0.08);
+  background: var(--l-badge-bg);
   border-radius: 12px;
-  color: var(--color-primary);
+  color: var(--l-accent);
   font-size: 20px;
 }
 
@@ -454,15 +479,14 @@ ion-content {
   display: flex;
   align-items: center;
   gap: var(--space-4);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.01);
 }
 
 .security-card__lock {
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: rgba(16, 185, 129, 0.08);
-  color: #10b981;
+  background: var(--l-sec-icon-bg);
+  color: var(--l-sec-icon-color);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -501,7 +525,6 @@ ion-content {
   flex-direction: column;
   align-items: flex-start;
   gap: var(--space-3);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.01);
 }
 
 .invite-preview-card__header {
@@ -516,7 +539,7 @@ ion-content {
 
   ion-icon {
     font-size: 14px;
-    color: var(--color-primary);
+    color: var(--l-accent);
   }
 }
 
@@ -559,13 +582,12 @@ ion-content {
   flex-direction: column;
   align-items: flex-start;
   gap: var(--space-3);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.01);
 }
 
 .identity-card__handle {
   font-size: 16px;
   font-weight: 700;
-  color: var(--color-primary);
+  color: var(--l-accent);
 }
 
 .identity-card__did {
@@ -586,66 +608,6 @@ ion-content {
   ion-icon {
     font-size: 14px;
   }
-}
-
-// Section 4: Device Sync
-.device-sync-preview {
-  position: relative;
-  width: 100%;
-  max-width: 280px;
-  height: 120px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.sync-device {
-  width: 80px;
-  height: 80px;
-  border-radius: 16px;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-
-  ion-icon {
-    font-size: 24px;
-    color: var(--color-text-secondary);
-  }
-
-  span {
-    font-size: 11px;
-    font-weight: 700;
-    color: var(--color-text-primary);
-  }
-
-  &--desktop {
-    transform: rotate(-3deg);
-  }
-
-  &--mobile {
-    transform: rotate(3deg);
-  }
-}
-
-.sync-line {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: var(--color-bg);
-  border: 1px solid var(--color-border);
-  color: var(--color-primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
 }
 
 // Section 5: App Mode Preview
@@ -685,6 +647,61 @@ ion-content {
   font-weight: 800;
   color: var(--color-text-secondary);
   opacity: 0.6;
+}
+
+// Section 5: Device Sync
+.device-sync-preview {
+  position: relative;
+  width: 100%;
+  max-width: 280px;
+  height: 120px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.sync-device {
+  width: 80px;
+  height: 80px;
+  border-radius: 16px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+
+  ion-icon {
+    font-size: 24px;
+    color: var(--color-text-secondary);
+  }
+
+  span {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--color-text-primary);
+  }
+
+  &--desktop { transform: rotate(-3deg); }
+  &--mobile { transform: rotate(3deg); }
+}
+
+.sync-line {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
 }
 
 // Section 6: Features Split Grid
@@ -807,10 +824,10 @@ ion-content {
   }
 }
 
-// ── SECTION 5: BOTTOM CALL-TO-ACTION ──────────────────────────────────────────
+// ── BOTTOM CALL-TO-ACTION ────────────────────────────────────────────────────
 
 .bottom-cta-section {
-  padding: 100px 0;
+  padding: 80px 0;
   background: var(--color-surface);
   border-top: 1px solid var(--color-border);
   text-align: center;

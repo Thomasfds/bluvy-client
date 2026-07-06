@@ -23,6 +23,7 @@ import { ROUTES } from '../../core/routes';
     TranslatePipe,
   ],
   templateUrl: './recovery-unlock.page.html',
+  styleUrls: ['./recovery-unlock.page.scss'],
 })
 export class RecoveryUnlockPage {
   private syncSvc     = inject(SyncService);
@@ -101,10 +102,10 @@ export class RecoveryUnlockPage {
       if (!environment.production) console.error('[RecoveryUnlock] restore failed:', err);
     }
     this.working = false;
-    await this.router.navigate([ROUTES.messages]);
+    await this.router.navigate([ROUTES.conversations]);
   }
 
   async onSkipPin(): Promise<void> {
-    await this.router.navigate([ROUTES.messages]);
+    await this.router.navigate([ROUTES.conversations]);
   }
 }

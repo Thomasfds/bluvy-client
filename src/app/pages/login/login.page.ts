@@ -1,5 +1,6 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { Router } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
 import { IonContent, IonIcon } from '@ionic/angular/standalone';
 import { AuthService } from '../../core/auth/auth.service';
 import { OAuthService } from '../../core/auth/oauth.service';
@@ -19,6 +20,7 @@ export class LoginPage implements OnInit {
   private auth     = inject(AuthService);
   private oauthSvc = inject(OAuthService);
   private i18n     = inject(TranslationService);
+  private http     = inject(HttpClient);
 
   handle   = '';
   loading  = false;
@@ -26,8 +28,26 @@ export class LoginPage implements OnInit {
   error    = '';
 
   async ngOnInit(): Promise<void> {
+    const cached = sessionStorage.getItem('bluvy_invite_context');
+    if (cached) {
+      try {
+        const context = JSON.parse(cached);
+        if (context.viewerDid) {
+          const url = `https://public.api.bsky.app/xrpc/app.bsky.actor.getProfile?actor=${encodeURIComponent(context.viewerDid)}`;
+          this.http.get<any>(url).subscribe({
+            next: profile => {
+              if (profile?.handle) {
+                this.handle = profile.handle;
+              }
+            },
+            error: () => {}
+          });
+        }
+      } catch {}
+    }
+
     if (this.auth.isAuthenticated()) {
-      await this.router.navigate([ROUTES.messages]);
+      await this.router.navigate([ROUTES.conversations]);
       return;
     }
 
@@ -46,7 +66,7 @@ export class LoginPage implements OnInit {
     try {
       const restored = await this.auth.restoreSession();
       if (restored) {
-        await this.router.navigate([ROUTES.messages]);
+        await this.router.navigate([ROUTES.conversations]);
       }
     } finally {
       this.checking = false;

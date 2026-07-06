@@ -1,5 +1,6 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
 import { Capacitor } from '@capacitor/core';
 import { IonContent, IonIcon } from '@ionic/angular/standalone';
 import { AuthService } from '../../core/auth/auth.service';
@@ -22,8 +23,32 @@ export class LandingPage implements OnInit {
   private oauthSvc = inject(OAuthService);
   private seo      = inject(SeoService);
   protected i18n   = inject(TranslationService);
+  private http     = inject(HttpClient);
+
+  inviter: { displayName: string; handle: string; avatarUrl: string | null } | null = null;
+  showFeatures = false;
 
   async ngOnInit(): Promise<void> {
+    const cached = sessionStorage.getItem('bluvy_invite_context');
+    if (cached) {
+      try {
+        const context = JSON.parse(cached);
+        if (context.targetDid) {
+          const url = `https://public.api.bsky.app/xrpc/app.bsky.actor.getProfile?actor=${encodeURIComponent(context.targetDid)}`;
+          this.http.get<any>(url).subscribe({
+            next: profile => {
+              this.inviter = {
+                displayName: profile.displayName || profile.handle,
+                handle: profile.handle,
+                avatarUrl: profile.avatar || null
+              };
+            },
+            error: () => {}
+          });
+        }
+      } catch {}
+    }
+
     this.seo.set({
       title:         'Bluvy Messenger',
       description:   'La messagerie privée construite sur Bluesky. Chiffrement de bout en bout MLS, vos clés, votre contrôle. Gratuit sur Web, Android et iOS.',
@@ -31,7 +56,7 @@ export class LandingPage implements OnInit {
     });
 
     if (this.auth.isAuthenticated()) {
-      await this.router.navigate([ROUTES.messages]);
+      await this.router.navigate([ROUTES.conversations]);
       return;
     }
     // Dev loopback: APP_INITIALIZER stored an OAuth session from the hash callback.
@@ -49,7 +74,7 @@ export class LandingPage implements OnInit {
     // chance to check stored tokens. A returning user with a still-valid
     // session should skip the marketing page entirely.
     if (await this.auth.restoreSession()) {
-      await this.router.navigate([ROUTES.messages]);
+      await this.router.navigate([ROUTES.conversations]);
     }
   }
 

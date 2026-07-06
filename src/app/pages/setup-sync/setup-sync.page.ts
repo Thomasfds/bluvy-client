@@ -24,6 +24,7 @@ import { ROUTES } from '../../core/routes';
     TranslatePipe,
   ],
   templateUrl: './setup-sync.page.html',
+  styleUrls: ['./setup-sync.page.scss'],
 })
 export class SetupSyncPage {
   private syncSvc = inject(SyncService);
@@ -79,7 +80,7 @@ export class SetupSyncPage {
   }
 
   async onContinue(): Promise<void> {
-    await this.router.navigate([ROUTES.messages]);
+    await this.router.navigate([ROUTES.conversations]);
   }
 
   private chunk(s: string, n: number): string[] {

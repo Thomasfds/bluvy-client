@@ -23,6 +23,7 @@ import { ROUTES } from '../../core/routes';
     TranslatePipe,
   ],
   templateUrl: './pin-unlock.page.html',
+  styleUrls: ['./pin-unlock.page.scss'],
 })
 export class PinUnlockPage implements OnInit, OnDestroy {
   private syncSvc     = inject(SyncService);
@@ -71,7 +72,7 @@ export class PinUnlockPage implements OnInit, OnDestroy {
         await this.coordinator.injectRestoredGroupStates(result.restoredGroupStates, user, device);
       }
 
-      await this.router.navigate([ROUTES.messages]);
+      await this.router.navigate([ROUTES.conversations]);
     } catch (err: unknown) {
       this.restoring = false;
       const httpErr = err as { status?: number };

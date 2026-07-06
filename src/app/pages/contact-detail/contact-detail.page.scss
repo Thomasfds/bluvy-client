@@ -12,6 +12,16 @@ ion-content {
   --background: var(--color-bg);
 }
 
+.profile-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100%;
+  padding: var(--space-6) var(--space-4);
+  box-sizing: border-box;
+}
+
 .ss-header {
   display: flex;
   align-items: center;
@@ -54,7 +64,8 @@ ion-content {
 
 .profile-card {
   max-width: 480px;
-  margin: var(--space-10) auto;
+  width: 100%;
+  margin: 0 auto;
   background: var(--color-surface);
   border-radius: var(--radius-lg);
   padding: var(--space-8) var(--space-6);
@@ -65,7 +76,7 @@ ion-content {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 
   @media (max-width: 768px) {
-    margin: var(--space-6) var(--space-4);
+    margin: 0;
   }
 
   &__avatar {

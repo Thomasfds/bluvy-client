@@ -200,6 +200,10 @@ export class SidebarListComponent implements OnInit, OnDestroy {
     }
   }
 
+  openContactProfile(profile: BlueskyProfile): void {
+    void this.router.navigate([ROUTES.contact(profile.did)]);
+  }
+
   private applyContactSearch(): void {
     const q = this.contactSearchQuery.toLowerCase().trim();
     if (!q) {

@@ -70,6 +70,11 @@ export const routes: Routes = [
       },
       // Legacy route redirects
       {
+        path: 'message',
+        redirectTo: 'conversations',
+        pathMatch: 'full',
+      },
+      {
         path: 'messages',
         redirectTo: 'conversations',
         pathMatch: 'full',

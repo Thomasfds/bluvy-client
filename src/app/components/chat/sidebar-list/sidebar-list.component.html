@@ -70,7 +70,7 @@
     @if (!contactsLoading && filteredBluesky.length > 0) {
       <div class="section-sep">{{ 'conversations.section.invite' | translate }}</div>
       @for (c of filteredBluesky; track c.did) {
-        <div class="contact-row">
+        <div class="contact-row" [class.contact-row--selected]="selectedContactDid() === c.did" (click)="openContactProfile(c)">
           <app-avatar [src]="c.avatarUrl ?? null" [handle]="c.handle" size="md"></app-avatar>
           <div class="contact-info">
             <span class="contact-name">{{ c.displayName || c.handle }}</span>

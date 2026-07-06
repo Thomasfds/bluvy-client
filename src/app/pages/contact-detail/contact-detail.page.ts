@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AsyncPipe } from '@angular/common';
 import { firstValueFrom } from 'rxjs';
@@ -11,8 +11,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { MlsCoordinatorBase } from '../../core/mls/coordinator/mls-coordinator.base';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
 import { ROUTES } from '../../core/routes';
-
-const INVITE_URL = 'https://bluvy.app';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-contact-detail',
@@ -21,7 +20,7 @@ const INVITE_URL = 'https://bluvy.app';
   standalone: true,
   imports: [IonContent, IonIcon, AvatarComponent, TranslatePipe, AsyncPipe],
 })
-export class ContactDetailPage implements OnInit {
+export class ContactDetailPage {
   private route       = inject(ActivatedRoute);
   private router      = inject(Router);
   private contactsSvc = inject(ContactsService);
@@ -37,7 +36,7 @@ export class ContactDetailPage implements OnInit {
   inviting = false;
   error = '';
 
-  async ngOnInit(): Promise<void> {
+  async ionViewWillEnter(): Promise<void> {
     const routeParams = this.route.snapshot.paramMap;
     this.did = routeParams.get('did') || '';
     if (this.did) {
@@ -91,11 +90,18 @@ export class ContactDetailPage implements OnInit {
   async invite(): Promise<void> {
     if (!this.blueskyProfile) return;
     this.inviting = true;
-    const text = `Hey! I use Bluvy for end-to-end encrypted messaging. Join me: ${INVITE_URL}`;
+
+    const userDid = this.authSvc.currentUser()?.did || '';
+    const cleanOrigin = window.location.origin.endsWith('/') ? window.location.origin.slice(0, -1) : window.location.origin;
+    const inviteUrl = environment.production
+      ? `https://bluvy.app/message#${userDid}+${this.did}`
+      : `${cleanOrigin}/message#${userDid}+${this.did}`;
+
+    const text = `Hey! I use Bluvy for end-to-end encrypted messaging. Join me: ${inviteUrl}`;
 
     try {
       if (typeof navigator.share === 'function') {
-        await navigator.share({ title: 'Join me on Bluvy', text, url: INVITE_URL });
+        await navigator.share({ title: 'Join me on Bluvy', text, url: inviteUrl });
       } else {
         await navigator.clipboard.writeText(`${text}`);
       }

@@ -7,6 +7,9 @@ import { SidebarListComponent } from '../../components/chat/sidebar-list/sidebar
 import { WelcomeComponent } from '../../components/ui/welcome/welcome.component';
 import { BreakpointService } from '../../core/layout/breakpoint.service';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
+import { NavigationRedirectService } from '../../core/auth/navigation-redirect.service';
+import { AuthService } from '../../core/auth/auth.service';
+import { KeyPackageService } from '../../core/mls/key-package/key-package.service';
 
 @Component({
   selector: 'app-conversations',
@@ -22,9 +25,26 @@ import { TranslatePipe } from '../../core/i18n/translate.pipe';
   ],
 })
 export class ConversationsPage {
-  readonly bpSvc = inject(BreakpointService);
+  readonly bpSvc       = inject(BreakpointService);
+  private readonly redirectSvc = inject(NavigationRedirectService);
+  private readonly authSvc     = inject(AuthService);
+  private readonly kpSvc       = inject(KeyPackageService);
 
   @ViewChild(SidebarListComponent) sidebarList!: SidebarListComponent;
+
+  ionViewWillEnter(): void {
+    const user = this.authSvc.currentUser();
+    if (user) {
+      // Verify and sync ATProto declaration record
+      const device = this.authSvc.currentDevice();
+      if (device) {
+        void this.kpSvc.syncDeclaration(user.did, device.id);
+      }
+
+      // Process pending invitation deep links
+      void this.redirectSvc.processPendingInvite(user.did);
+    }
+  }
 
   async handleRefresh(event: CustomEvent): Promise<void> {
     if (this.sidebarList) {

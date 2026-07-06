@@ -210,11 +210,16 @@ export class OAuthService {
       void App.addListener('appUrlOpen', async ({ url }) => {
         clearTimeout(timer);
         try {
-          const params = new URL(url).searchParams;
+          const parsedUrl = new URL(url);
+          let params = parsedUrl.searchParams;
+          if (!params.has('state') && parsedUrl.hash) {
+            params = new URLSearchParams(parsedUrl.hash.slice(1));
+          }
           await this.handleCallback(params);
           await Browser.close();
           resolve();
         } catch (err) {
+          console.error('[AppUrlOpen Error]', err);
           await Browser.close().catch(() => {});
           reject(err);
         }

@@ -1,6 +1,6 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { HttpClient } from '@angular/common/http';
+import { ApiClientService } from '../../core/infrastructure/api-client.service';
 import { Capacitor } from '@capacitor/core';
 import { IonContent, IonIcon } from '@ionic/angular/standalone';
 import { AuthService } from '../../core/auth/auth.service';
@@ -23,7 +23,7 @@ export class LandingPage implements OnInit {
   private oauthSvc = inject(OAuthService);
   private seo      = inject(SeoService);
   protected i18n   = inject(TranslationService);
-  private http     = inject(HttpClient);
+  private apiClient = inject(ApiClientService);
 
   inviter: { displayName: string; handle: string; avatarUrl: string | null } | null = null;
   showFeatures = false;
@@ -35,16 +35,13 @@ export class LandingPage implements OnInit {
         const context = JSON.parse(cached);
         if (context.targetDid) {
           const url = `https://public.api.bsky.app/xrpc/app.bsky.actor.getProfile?actor=${encodeURIComponent(context.targetDid)}`;
-          this.http.get<any>(url).subscribe({
-            next: profile => {
-              this.inviter = {
-                displayName: profile.displayName || profile.handle,
-                handle: profile.handle,
-                avatarUrl: profile.avatar || null
-              };
-            },
-            error: () => {}
-          });
+          this.apiClient.get<any>(url, { skipAuth: true }).then(profile => {
+            this.inviter = {
+              displayName: profile.displayName || profile.handle,
+              handle: profile.handle,
+              avatarUrl: profile.avatar || null
+            };
+          }).catch(() => {});
         }
       } catch {}
     }

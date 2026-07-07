@@ -27,9 +27,12 @@ export class ContactsPage {
   @ViewChild(SidebarListComponent) sidebarList!: SidebarListComponent;
 
   async handleRefresh(event: CustomEvent): Promise<void> {
-    if (this.sidebarList) {
-      await this.sidebarList.loadContacts();
+    try {
+      if (this.sidebarList) {
+        await this.sidebarList.loadContacts();
+      }
+    } finally {
+      (event.target as HTMLIonRefresherElement).complete();
     }
-    (event.target as HTMLIonRefresherElement).complete();
   }
 }

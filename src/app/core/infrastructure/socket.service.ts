@@ -76,7 +76,11 @@ export class SocketService {
     this.socket = this.zone.runOutsideAngular(() =>
       io(environment.socketUrl, {
         auth: (cb: (data: Record<string, string>) => void) => {
-          void this.storage.getAccessToken().then(token => cb({ token: token ?? '' }));
+          const presence = localStorage.getItem('privacy_presence_enabled') !== 'false';
+          void this.storage.getAccessToken().then(token => cb({
+            token: token ?? '',
+            presence: presence ? 'true' : 'false',
+          }));
         },
         transports:           ['websocket', 'polling'],
         reconnectionDelay:    1000,
@@ -164,7 +168,10 @@ export class SocketService {
   }
 
   disconnect(): void {
-    this.socket?.disconnect();
+    if (this.socket) {
+      this.socket.removeAllListeners();
+      this.socket.disconnect();
+    }
     this.socket = null;
     this._hasConnectedOnce = false;
   }

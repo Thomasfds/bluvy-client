@@ -23,7 +23,7 @@ import { environment } from './environments/environment';
 import { routes } from './app/app.routes';
 import { AppComponent } from './app/app.component';
 import { MlsCoordinatorBase } from './app/core/mls/coordinator/mls-coordinator.base';
-import { MlsCoordinatorService } from './app/core/mls/coordinator/mls-coordinator.service';
+import { LazyMlsCoordinatorService } from './app/core/mls/coordinator/lazy-mls-coordinator.service';
 import { provideServiceWorker } from '@angular/service-worker';
 import { OAuthService } from './app/core/auth/oauth.service';
 
@@ -49,7 +49,7 @@ bootstrapApplication(AppComponent, {
     provideIonicAngular(),
     provideRouter(routes, withPreloading(PreloadAllModules)),
     provideHttpClient(),
-    { provide: MlsCoordinatorBase, useExisting: MlsCoordinatorService },
+    { provide: MlsCoordinatorBase, useClass: LazyMlsCoordinatorService },
     // Detect OAuth callback (hash or query) before routing so the code is not
     // lost when Angular navigation clears window.location.hash.
     {

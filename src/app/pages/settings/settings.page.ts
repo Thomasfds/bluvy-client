@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, inject } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { IonContent, IonIcon } from '@ionic/angular/standalone';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
@@ -24,6 +24,10 @@ export class SettingsPage {
 
   openLanguage(): void {
     void this.router.navigate([ROUTES.settingsLanguage]);
+  }
+
+  openPrivacy(): void {
+    void this.router.navigate([ROUTES.settingsPrivacy]);
   }
 
   openDevices(): void {

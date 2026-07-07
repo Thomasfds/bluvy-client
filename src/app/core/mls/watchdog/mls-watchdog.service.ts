@@ -35,6 +35,7 @@ export class MlsWatchdogService {
 
     this.ngZone.runOutsideAngular(() => {
       const timer = setTimeout(() => {
+        this.timers.delete(convId); // purge fired entry
         if (!environment.production) console.error(
           `[MLS:watchdog] Stuck state detected — convId=${convId} state=${state}`,
           `(no transition after ${timeout / 1000}s)`,

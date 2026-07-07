@@ -37,20 +37,28 @@
       <ion-text color="danger">{{ error }}</ion-text>
     </div>
   } @else {
-    <div class="messages-list">
-      @for (msg of displayMessages; track msg.id; let i = $index) {
-        @if (getDateSeparator(i); as label) {
-          <div class="date-sep">{{ label }}</div>
+    @if (displayMessages.length === 0) {
+      <div class="empty-state">
+        <ion-icon name="chatbubble-ellipses-outline" class="empty-state__icon"></ion-icon>
+        <p class="empty-state__title">{{ 'conversation.empty.title' | translate }}</p>
+        <p class="empty-state__desc">{{ 'conversation.empty.desc' | translate }}</p>
+      </div>
+    } @else {
+      <div class="messages-list">
+        @for (msg of displayMessages; track msg.id; let i = $index) {
+          @if (getDateSeparator(i); as label) {
+            <div class="date-sep">{{ label }}</div>
+          }
+          <app-message-bubble
+            [text]="msg.displayText"
+            [isMine]="msg.isMine"
+            [timestamp]="msg.createdAt"
+            [pending]="msg.pending"
+            [receiptStatus]="msg.isMine && msg.id === lastSentMessageId && !msg.pending ? receiptStatusForLast : null"
+          ></app-message-bubble>
         }
-        <app-message-bubble
-          [text]="msg.displayText"
-          [isMine]="msg.isMine"
-          [timestamp]="msg.createdAt"
-          [pending]="msg.pending"
-          [receiptStatus]="msg.isMine && msg.id === lastSentMessageId && !msg.pending ? receiptStatusForLast : null"
-        ></app-message-bubble>
-      }
-    </div>
+      </div>
+    }
 
     @if ((typingUsers$ | async)?.length) {
       <app-typing-indicator

@@ -13,7 +13,7 @@ import { BackupRepository } from '../../core/backup/backup.repository';
 import { MessageCacheService } from '../../core/conversation/message-cache.service';
 import { MlsCoordinatorBase } from '../../core/mls/coordinator/mls-coordinator.base';
 import { deriveBackupKey, decryptFromBackup } from '../../core/backup/backup.crypto';
-import { base58Decode } from '../../core/backup/base58';
+import { base58Decode } from '../../core/infrastructure/base58';
 import type {
   Argon2idHkdfParams,
   BackupMessagePlaintext,

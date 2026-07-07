@@ -201,29 +201,36 @@ export class OAuthService {
     await Browser.open({ url: authUrl.toString(), presentationStyle: 'popover' });
 
     // Android App Links intercept https://bluvy.app/oauth/callback and fire appUrlOpen.
-    await new Promise<void>((resolve, reject) => {
-      const timer = setTimeout(
-        () => reject(new Error('OAuth timeout — aucun callback reçu.')),
-        5 * 60 * 1000,
-      );
+    let listenerHandle: any = null;
+    try {
+      await new Promise<void>(async (resolve, reject) => {
+        const timer = setTimeout(
+          () => reject(new Error('OAuth timeout — aucun callback reçu.')),
+          5 * 60 * 1000,
+        );
 
-      void App.addListener('appUrlOpen', async ({ url }) => {
-        clearTimeout(timer);
-        try {
-          const parsedUrl = new URL(url);
-          let params = parsedUrl.searchParams;
-          if (!params.has('state') && parsedUrl.hash) {
-            params = new URLSearchParams(parsedUrl.hash.slice(1));
+        listenerHandle = await App.addListener('appUrlOpen', async ({ url }) => {
+          clearTimeout(timer);
+          try {
+            const parsedUrl = new URL(url);
+            let params = parsedUrl.searchParams;
+            if (!params.has('state') && parsedUrl.hash) {
+              params = new URLSearchParams(parsedUrl.hash.slice(1));
+            }
+            await this.handleCallback(params);
+            await Browser.close();
+            resolve();
+          } catch (err) {
+            console.error('[AppUrlOpen Error]', err);
+            await Browser.close().catch(() => {});
+            reject(err);
           }
-          await this.handleCallback(params);
-          await Browser.close();
-          resolve();
-        } catch (err) {
-          console.error('[AppUrlOpen Error]', err);
-          await Browser.close().catch(() => {});
-          reject(err);
-        }
+        });
       });
-    });
+    } finally {
+      if (listenerHandle) {
+        listenerHandle.remove();
+      }
+    }
   }
 }

@@ -5,7 +5,7 @@ import { environment } from '../../../environments/environment';
 import { Capacitor } from '@capacitor/core';
 import type { PluginListenerHandle } from '@capacitor/core';
 import { App } from '@capacitor/app';
-import { base58Decode, base58Encode } from './base58';
+import { base58Decode, base58Encode } from '../infrastructure/base58';
 import { SyncRepository } from './sync.repository';
 import { FailedSyncBatchRepository } from './failed-sync-batch.repository';
 import {

@@ -1,6 +1,5 @@
 import { Component, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { AsyncPipe } from '@angular/common';
 import { firstValueFrom } from 'rxjs';
 import { IonContent, IonIcon, IonModal, ToastController } from '@ionic/angular/standalone';
 import { AvatarComponent } from '../../components/ui/avatar/avatar.component';
@@ -23,7 +22,7 @@ import { close, chatbubbleEllipsesOutline, linkOutline, shareSocialOutline } fro
   templateUrl: './contact-detail.page.html',
   styleUrls: ['./contact-detail.page.scss'],
   standalone: true,
-  imports: [IonContent, IonIcon, IonModal, AvatarComponent, TranslatePipe, AsyncPipe],
+  imports: [IonContent, IonIcon, IonModal, AvatarComponent, TranslatePipe],
 })
 export class ContactDetailPage {
   private route       = inject(ActivatedRoute);
@@ -136,7 +135,13 @@ export class ContactDetailPage {
       });
       await toast.present();
     } catch {
-      // Ignored
+      const toast = await this.toastCtrl.create({
+        message: 'Impossible de copier dans le presse-papiers.',
+        duration: 3000,
+        position: 'bottom',
+        color: 'danger'
+      });
+      await toast.present();
     }
 
     const bskyUrl = 'https://bsky.app/messages';
@@ -159,7 +164,13 @@ export class ContactDetailPage {
       });
       await toast.present();
     } catch {
-      // Ignored
+      const toast = await this.toastCtrl.create({
+        message: 'Impossible de copier le lien.',
+        duration: 3000,
+        position: 'bottom',
+        color: 'danger'
+      });
+      await toast.present();
     }
     this.isInviteModalOpen = false;
   }
@@ -182,8 +193,19 @@ export class ContactDetailPage {
       } else {
         window.open(this.qrCodeUrl, '_blank');
       }
-    } catch {
-      // Ignored
+    } catch (err) {
+      // User-cancelled share dialog (AbortError) is expected — not an error
+      const isAbort = err instanceof Error &&
+        (err.name === 'AbortError' || err.message.toLowerCase().includes('cancel'));
+      if (!isAbort) {
+        const toast = await this.toastCtrl.create({
+          message: 'Impossible de partager le QR code.',
+          duration: 3000,
+          position: 'bottom',
+          color: 'danger'
+        });
+        await toast.present();
+      }
     }
   }
 }

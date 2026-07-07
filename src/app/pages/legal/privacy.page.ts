@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { Location } from '@angular/common';
 import { IonContent, IonIcon } from '@ionic/angular/standalone';
 import { SeoService } from '../../core/services/seo.service';
@@ -12,13 +12,12 @@ import { TranslationService } from '../../core/i18n/translation.service';
   templateUrl: './privacy.page.html',
   styleUrls: ['./legal.scss'],
 })
-export class PrivacyPage implements OnInit {
+export class PrivacyPage {
   private location = inject(Location);
-  private seo      = inject(SeoService);
   protected i18n   = inject(TranslationService);
 
-  ngOnInit(): void {
-    this.seo.set({
+  constructor() {
+    inject(SeoService).set({
       title:         'Politique de confidentialité',
       description:   'Vos messages sont chiffrés sur votre appareil — Bluvy Messenger ne peut pas lire leur contenu. Informations sur la collecte et le traitement des données.',
       canonicalPath: '/privacy',

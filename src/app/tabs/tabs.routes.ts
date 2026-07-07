@@ -37,6 +37,12 @@ export const routes: Routes = [
           import('../pages/sync-settings/sync-settings.page').then(m => m.SyncSettingsPage),
       },
       {
+        path: 'settings/privacy',
+        loadComponent: () =>
+          import('../pages/privacy-settings/privacy-settings.page') // privacy settings view
+            .then(m => m.PrivacySettingsPage),
+      },
+      {
         path: 'settings',
         loadComponent: () =>
           import('../pages/settings/settings.page').then(m => m.SettingsPage),

@@ -14,6 +14,12 @@
       <ion-card-content>
         <p>{{ 'setup_sync.pin.desc' | translate }}</p>
 
+        <div class="notice-banner-amber" style="margin: 16px 0; border-radius: 8px;">
+          <p style="margin: 0; font-size: var(--text-sm); line-height: 1.4;">
+            {{ 'setup_sync.disclosure' | translate }}
+          </p>
+        </div>
+
         <ion-input
           [value]="pin"
           (ionInput)="onPinInput($event)"

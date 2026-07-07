@@ -1,11 +1,11 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
-import { decodeMlsMessage } from 'ts-mls';
 import { environment } from '../../../../environments/environment';
 import { MlsService } from '../mls.service';
 import { KeyPackageRepository } from './key-package.repository';
 import { MlsStateStorageService } from '../mls-state-storage.service';
 import { AtprotoRepoService } from '../../auth/atproto-repo.service';
+import { OAuthService } from '../../auth/oauth.service';
 import type { KeyPackageCountResponse, KeyPackagePoolStatus } from './key-package.types';
 import type { StoredMlsState } from '../mls.types';
 
@@ -20,6 +20,7 @@ export class KeyPackageService {
   private readonly mlsSvc  = inject(MlsService);
   private readonly atprotoRepo = inject(AtprotoRepoService);
   private readonly storage     = inject(MlsStateStorageService);
+  private readonly oauthSvc     = inject(OAuthService);
 
   private _poolStatus:   KeyPackagePoolStatus = 'idle';
   private ensurePromise?: Promise<void>;
@@ -65,6 +66,7 @@ export class KeyPackageService {
   }
 
   async syncDeclaration(userDid: string, deviceId: string): Promise<void> {
+    if (!this.oauthSvc.session) return;
     try {
       const state = await this.storage.load<StoredMlsState>(this.mlsSvc.getStorageScope(userDid, deviceId));
       if (!state) return;
@@ -73,6 +75,7 @@ export class KeyPackageService {
       if (!rec) return;
 
       const binary = this.base64ToBytes(rec.serializedKeyPackage);
+      const { decodeMlsMessage } = await import('ts-mls');
       const decoded = decodeMlsMessage(binary, 0);
       const msg = decoded?.[0];
       if (!msg || msg.wireformat !== 'mls_key_package') return;
@@ -80,13 +83,14 @@ export class KeyPackageService {
       const signatureKey = msg.keyPackage?.leafNode?.signaturePublicKey;
       if (!signatureKey) return;
 
-      const cacheKey = `bluvy-published-key-${userDid}`;
+      const showButtonTo = 'everyone';
+      const cacheKey = `bluvy-published-key-${userDid}-${showButtonTo}`;
       const cachedHex = sessionStorage.getItem(cacheKey);
       const currentHex = (Array.from(signatureKey) as number[]).map(x => x.toString(16).padStart(2, '0')).join('');
 
       if (cachedHex === currentHex) return;
 
-      await this.atprotoRepo.publishDeclaration(signatureKey, 'everyone');
+      await this.atprotoRepo.publishDeclaration(signatureKey, showButtonTo);
       sessionStorage.setItem(cacheKey, currentHex);
     } catch (err) {
       if (!environment.production) console.error('[KeyPackageService] syncDeclaration failed:', err);

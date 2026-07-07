@@ -1,7 +1,7 @@
 import type { IKeyStore } from './message-cache.types';
 
 const DB_NAME    = 'skychat-message-cache';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 const KEY_STORE  = 'keys';
 const MSG_STORE  = 'messages';
 
@@ -49,18 +49,28 @@ export class WebKeyStore implements IKeyStore {
     return new Promise<IDBDatabase>((resolve, reject) => {
       const request = indexedDB.open(DB_NAME, DB_VERSION);
 
-      request.onupgradeneeded = () => {
+      request.onupgradeneeded = (event: IDBVersionChangeEvent) => {
         const db = request.result;
+        // V1→V2: full store reset
+        if (event.oldVersion > 0 && event.oldVersion < 2) {
+          if (db.objectStoreNames.contains(KEY_STORE)) db.deleteObjectStore(KEY_STORE);
+          if (db.objectStoreNames.contains(MSG_STORE)) db.deleteObjectStore(MSG_STORE);
+        }
         if (!db.objectStoreNames.contains(KEY_STORE)) {
           db.createObjectStore(KEY_STORE, { keyPath: 'id' });
         }
         if (!db.objectStoreNames.contains(MSG_STORE)) {
           const store = db.createObjectStore(MSG_STORE, { keyPath: 'id' });
           store.createIndex('by-conversation-created', ['conversationId', 'createdAt'], { unique: false });
-          store.createIndex('by-conversation-id',      ['conversationId', 'id'],        { unique: false });
           store.createIndex('by-deleted',              'deletedAt',                     { unique: false });
-          store.createIndex('by-cache-version',        'cacheVersion',                  { unique: false });
-          store.createIndex('by-encryption-version',   'encryptionVersion',             { unique: false });
+        }
+        // V2→V3: drop unused indexes
+        if (event.oldVersion === 2) {
+          const tx = (event.target as IDBOpenDBRequest).transaction!;
+          const store = tx.objectStore(MSG_STORE);
+          for (const name of ['by-conversation-id', 'by-cache-version', 'by-encryption-version'] as const) {
+            if (store.indexNames.contains(name)) store.deleteIndex(name);
+          }
         }
       };
 

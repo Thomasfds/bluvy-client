@@ -79,7 +79,12 @@
         </div>
       }
     }
-    @if (!contactsLoading && filteredBluvy.length === 0 && filteredBluesky.length === 0) {
+    @if (!contactsLoading && contactsError) {
+      <div class="ion-text-center ion-padding">
+        <ion-text color="danger">{{ contactsError | translate }}</ion-text>
+      </div>
+    }
+    @if (!contactsLoading && !contactsError && filteredBluvy.length === 0 && filteredBluesky.length === 0) {
       <div class="empty-state">
         <ion-icon name="people-outline" class="empty-state__icon"></ion-icon>
         <p class="empty-state__title">{{ 'conversations.contacts.empty.title' | translate }}</p>

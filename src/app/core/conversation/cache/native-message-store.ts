@@ -68,6 +68,9 @@ export class NativeMessageStore implements IMessageStore {
     if (!isOpen.result) {
       await this.db.open();
     }
+
+    await this.db.execute('PRAGMA journal_mode=WAL;', false);
+    await this.pruneStale().catch(() => {});
   }
 
   async put(record: EncryptedCacheRecord): Promise<void> {
@@ -175,6 +178,33 @@ export class NativeMessageStore implements IMessageStore {
 
   async clear(): Promise<void> {
     await this.db!.execute('DELETE FROM message_cache', false);
+  }
+
+  async close(): Promise<void> {
+    if (this.db) {
+      const isOpen = await this.db.isDBOpen();
+      if (isOpen.result) {
+        await this.db.close();
+      }
+      this.db = null;
+    }
+  }
+
+  async updateSenderDidMany(updates: { id: string; senderDid: string; isMine: boolean }[]): Promise<void> {
+    if (updates.length === 0) return;
+    const statements = updates.map(u => ({
+      statement: 'UPDATE message_cache SET sender_did = ?, is_mine = ? WHERE id = ?',
+      values: [u.senderDid, u.isMine ? 1 : 0, u.id]
+    }));
+    await this.db!.executeSet(statements, true);
+  }
+
+  async pruneStale(): Promise<void> {
+    const threshold = Date.now() - 7 * 24 * 60 * 60 * 1000; // 7 days
+    await this.db!.run(
+      'DELETE FROM message_cache WHERE deleted_at IS NOT NULL AND deleted_at < ?',
+      [threshold],
+    );
   }
 
   // ── Private ────────────────────────────────────────────────────────────────

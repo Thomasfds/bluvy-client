@@ -98,3 +98,88 @@ ion-title {
   text-align: left;
 }
 
+/* ── Shared loading / empty state utilities ───────────────────────── */
+
+.loading-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-12);
+}
+
+.spinner {
+  width: 24px;
+  height: 24px;
+  border: 2.5px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: var(--radius-full);
+  animation: spin 0.7s linear infinite;
+
+  &--sm {
+    width: 14px;
+    height: 14px;
+    border-width: 2px;
+  }
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner { animation: none; }
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--space-12) var(--space-6);
+  text-align: center;
+  gap: var(--space-3);
+
+  &__icon {
+    font-size: 44px;
+    color: var(--color-text-secondary);
+    opacity: 0.3;
+  }
+
+  &__title {
+    font-size: var(--text-base);
+    font-weight: var(--weight-semibold);
+    color: var(--color-text-primary);
+    margin: 0;
+    font-family: var(--font-sans);
+  }
+
+  &__desc {
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+    margin: 0;
+    max-width: 240px;
+    line-height: 1.5;
+    font-family: var(--font-sans);
+  }
+}
+
+/* ── Shared warning/amber notice banner ───────────────────────────── */
+
+.notice-banner-amber {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  background: rgba(251, 191, 36, 0.08);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3) var(--space-4);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  color: var(--color-text-primary);
+  line-height: 1.5;
+
+  ion-icon {
+    font-size: 18px;
+    color: #F59E0B;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+}
+

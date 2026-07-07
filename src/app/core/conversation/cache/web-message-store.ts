@@ -1,7 +1,7 @@
 import type { EncryptedCacheRecord, IMessageStore } from './message-cache.types';
 
 const DB_NAME    = 'skychat-message-cache';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 const KEY_STORE  = 'keys';
 const MSG_STORE  = 'messages';
 
@@ -10,6 +10,7 @@ export class WebMessageStore implements IMessageStore {
 
   async initialize(): Promise<void> {
     this.db = await this.openDb();
+    await this.pruneStale().catch(() => {});
   }
 
   async put(record: EncryptedCacheRecord): Promise<void> {
@@ -65,12 +66,21 @@ export class WebMessageStore implements IMessageStore {
   }
 
   async updateSenderDid(id: string, senderDid: string, isMine: boolean): Promise<boolean> {
-    const db     = await this.openDb();
-    const record = await this.getRecord(db, id);
-    if (!record) return false;
-    if (record.senderDid === senderDid) return false;
-    await this.putRecord(db, { ...record, senderDid, isMine });
-    return true;
+    const db = await this.openDb();
+    return new Promise<boolean>((resolve, reject) => {
+      const tx    = db.transaction(MSG_STORE, 'readwrite');
+      const store = tx.objectStore(MSG_STORE);
+      const getReq = store.get(id);
+      getReq.onsuccess = () => {
+        const record = getReq.result as EncryptedCacheRecord | undefined;
+        if (!record || record.senderDid === senderDid) { resolve(false); return; }
+        const putReq = store.put({ ...record, senderDid, isMine });
+        putReq.onerror = () => reject(putReq.error);
+      };
+      getReq.onerror = () => reject(getReq.error);
+      tx.oncomplete = () => resolve(true);
+      tx.onerror    = () => reject(tx.error);
+    });
   }
 
   async delete(id: string): Promise<void> {
@@ -95,6 +105,75 @@ export class WebMessageStore implements IMessageStore {
     });
   }
 
+  async close(): Promise<void> {
+    if (this.db) {
+      this.db.close();
+      this.db = null;
+    }
+  }
+
+  async updateSenderDidMany(updates: { id: string; senderDid: string; isMine: boolean }[]): Promise<void> {
+    if (updates.length === 0) return;
+    const db = await this.openDb();
+    return new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(MSG_STORE, 'readwrite');
+      const store = tx.objectStore(MSG_STORE);
+      
+      let count = 0;
+      const processNext = () => {
+        if (count === updates.length) {
+          return;
+        }
+        const { id, senderDid, isMine } = updates[count]!;
+        const getRequest = store.get(id);
+        getRequest.onsuccess = () => {
+          const record = getRequest.result as EncryptedCacheRecord | null;
+          if (record && record.senderDid !== senderDid) {
+            const putRequest = store.put({ ...record, senderDid, isMine });
+            putRequest.onsuccess = () => {
+              count++;
+              processNext();
+            };
+            putRequest.onerror = () => reject(putRequest.error);
+          } else {
+            count++;
+            processNext();
+          }
+        };
+        getRequest.onerror = () => reject(getRequest.error);
+      };
+      
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+      
+      processNext();
+    });
+  }
+
+  async pruneStale(): Promise<void> {
+    const db = await this.openDb();
+    const threshold = Date.now() - 7 * 24 * 60 * 60 * 1000; // 7 days
+    return new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(MSG_STORE, 'readwrite');
+      const store = tx.objectStore(MSG_STORE);
+      const index = store.index('by-deleted');
+      
+      const range = IDBKeyRange.upperBound(threshold);
+      const request = index.openCursor(range);
+      
+      request.onsuccess = (event) => {
+        const cursor = (event.target as any).result;
+        if (cursor) {
+          cursor.delete();
+          cursor.continue();
+        }
+      };
+      
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  }
+
   // ── Private ────────────────────────────────────────────────────────────────
 
   private openDb(): Promise<IDBDatabase> {
@@ -105,6 +184,7 @@ export class WebMessageStore implements IMessageStore {
 
       request.onupgradeneeded = (event: IDBVersionChangeEvent) => {
         const db = request.result;
+        // V1→V2: full store reset
         if (event.oldVersion > 0 && event.oldVersion < 2) {
           if (db.objectStoreNames.contains(KEY_STORE)) db.deleteObjectStore(KEY_STORE);
           if (db.objectStoreNames.contains(MSG_STORE)) db.deleteObjectStore(MSG_STORE);
@@ -114,11 +194,19 @@ export class WebMessageStore implements IMessageStore {
         }
         if (!db.objectStoreNames.contains(MSG_STORE)) {
           const store = db.createObjectStore(MSG_STORE, { keyPath: 'id' });
+          // Only indexes actually used by queries:
+          //   by-conversation-created → queryByConversation*, queryAllIds, queryNewestId
+          //   by-deleted              → pruneStale
           store.createIndex('by-conversation-created', ['conversationId', 'createdAt'], { unique: false });
-          store.createIndex('by-conversation-id',      ['conversationId', 'id'],        { unique: false });
           store.createIndex('by-deleted',              'deletedAt',                     { unique: false });
-          store.createIndex('by-cache-version',        'cacheVersion',                  { unique: false });
-          store.createIndex('by-encryption-version',   'encryptionVersion',             { unique: false });
+        }
+        // V2→V3: drop unused indexes (by-conversation-id, by-cache-version, by-encryption-version)
+        if (event.oldVersion === 2) {
+          const tx = (event.target as IDBOpenDBRequest).transaction!;
+          const store = tx.objectStore(MSG_STORE);
+          for (const name of ['by-conversation-id', 'by-cache-version', 'by-encryption-version'] as const) {
+            if (store.indexNames.contains(name)) store.deleteIndex(name);
+          }
         }
       };
 

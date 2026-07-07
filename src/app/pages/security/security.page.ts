@@ -1,5 +1,4 @@
-import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
-import { Location } from '@angular/common';
+import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { IonContent, IonIcon } from '@ionic/angular/standalone';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
@@ -13,7 +12,7 @@ import { ROUTES } from '../../core/routes';
   styleUrls: ['./security.page.scss'],
 })
 export class SecurityPage {
-  private router   = inject(Router);
+  private router = inject(Router);
 
   goBack(): void {
     void this.router.navigate([ROUTES.menu]);

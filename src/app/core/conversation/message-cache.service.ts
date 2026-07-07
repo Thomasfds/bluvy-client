@@ -29,6 +29,12 @@ export class MessageCacheService {
     const scope = `cache:${userDid}:${deviceId}`;
     if (this.initializedScope === scope) return;
 
+    if (this.msgStore) {
+      await this.msgStore.close().catch(err => {
+        console.error('[MessageCacheService] Failed to close previous store connection:', err);
+      });
+    }
+
     if (Capacitor.isNativePlatform()) {
       this.keyStore = new NativeKeyStore(); // Android Keystore / iOS Keychain
       this.msgStore = new NativeMessageStore();
@@ -71,6 +77,10 @@ export class MessageCacheService {
   // Returns true if the record was found and the value actually changed.
   async updateSenderDid(messageId: string, senderDid: string, isMine: boolean): Promise<boolean> {
     return this.msgStore.updateSenderDid(messageId, senderDid, isMine);
+  }
+
+  async updateSenderDidMany(updates: { id: string; senderDid: string; isMine: boolean }[]): Promise<void> {
+    return this.msgStore.updateSenderDidMany(updates);
   }
 
   async getMessages(

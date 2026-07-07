@@ -1,15 +1,17 @@
 import {
-  Component, OnInit, OnDestroy, ViewChild, ChangeDetectorRef, inject,
+  Component, OnInit, OnDestroy, ViewChild, inject,
 } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { AsyncPipe } from '@angular/common';
 import { firstValueFrom, Observable, Subscription } from 'rxjs';
 import {
   IonHeader, IonToolbar, IonTitle, IonContent,
   IonFooter,
   IonText,
-  IonButtons, IonBackButton,
+  IonButtons, IonBackButton, IonIcon,
 } from '@ionic/angular/standalone';
+import { addIcons } from 'ionicons';
+import { chatbubbleEllipsesOutline } from 'ionicons/icons';
 import { AvatarComponent } from '../../components/ui/avatar/avatar.component';
 import { MessageBubbleComponent } from '../../components/chat/message-bubble/message-bubble.component';
 import { MessageComposerComponent } from '../../components/chat/message-composer/message-composer.component';
@@ -40,7 +42,7 @@ import { TranslationService } from '../../core/i18n/translation.service';
     IonHeader, IonToolbar, IonTitle, IonContent,
     IonFooter,
     IonText,
-    IonButtons, IonBackButton,
+    IonButtons, IonBackButton, IonIcon,
     AvatarComponent,
     MessageBubbleComponent, MessageComposerComponent, TypingIndicatorComponent,
     TranslatePipe,
@@ -49,12 +51,16 @@ import { TranslationService } from '../../core/i18n/translation.service';
 export class ConversationPage implements OnInit, OnDestroy {
   @ViewChild(IonContent) private ionContent!: IonContent;
 
+  constructor() {
+    addIcons({ chatbubbleEllipsesOutline });
+  }
+
   private route           = inject(ActivatedRoute);
+  private router          = inject(Router);
   private authSvc         = inject(AuthService);
   private convSvc         = inject(ConversationsService);
   private coordinator     = inject(MlsCoordinatorBase);
   private socketSvc       = inject(SocketService);
-  private cdr             = inject(ChangeDetectorRef);
   private messageCacheSvc = inject(MessageCacheService);
   private syncSvc         = inject(SyncService);
   private typingSvc       = inject(TypingService);
@@ -95,6 +101,7 @@ export class ConversationPage implements OnInit, OnDestroy {
   private subs              = new Subscription();
   private knownIds          = new Set<string>();
   private ensureGroupAbort: AbortController | null = null;
+  private scrollTimer:      ReturnType<typeof setTimeout> | null = null;
 
   async ngOnInit(): Promise<void> {
     this.conversationId = this.route.snapshot.paramMap.get('id') ?? '';
@@ -145,6 +152,10 @@ export class ConversationPage implements OnInit, OnDestroy {
     this.markReadIfVisible();
     this.ensureGroupAbort?.abort();
     this.ensureGroupAbort = null;
+    if (this.scrollTimer !== null) {
+      clearTimeout(this.scrollTimer);
+      this.scrollTimer = null;
+    }
     this.subs.unsubscribe();
   }
 
@@ -268,15 +279,30 @@ export class ConversationPage implements OnInit, OnDestroy {
     // [4] Repair sender info for cached messages that predate migration 0004.
     // senderDid is now returned by the server — update any cached record that lacks it.
     let senderUpdated = false;
+    const updates: { id: string; senderDid: string; isMine: boolean }[] = [];
     for (const msg of page.data) {
       if (allCachedIds.has(msg.id) && msg.senderDid) {
-        const changed = await this.messageCacheSvc.updateSenderDid(
-          msg.id,
-          msg.senderDid,
-          msg.senderDid === user.did,
-        );
-        if (changed) senderUpdated = true;
+        const cachedMsg = cacheResult.messages.find(m => m.id === msg.id);
+        if (cachedMsg) {
+          if (cachedMsg.senderDid !== msg.senderDid) {
+            updates.push({
+              id: msg.id,
+              senderDid: msg.senderDid,
+              isMine: msg.senderDid === user.did,
+            });
+            senderUpdated = true;
+          }
+        } else {
+          updates.push({
+            id: msg.id,
+            senderDid: msg.senderDid,
+            isMine: msg.senderDid === user.did,
+          });
+        }
       }
+    }
+    if (updates.length > 0) {
+      await this.messageCacheSvc.updateSenderDidMany(updates);
     }
     if (senderUpdated) {
       const refreshed = await this.messageCacheSvc.getMessages(this.conversationId, 50, true);
@@ -423,7 +449,21 @@ export class ConversationPage implements OnInit, OnDestroy {
     return null;
   }
 
+  /**
+   * Returns true only when this conversation is the page the user is currently
+   * looking at. On mobile this is always true (the component is only mounted
+   * when the route is active). On tablet/PC the router outlet keeps the
+   * component alive even while another route is shown in the main panel, so we
+   * must check the live URL.
+   */
+  private isActiveConversation(): boolean {
+    if (document.visibilityState === 'hidden') return false;
+    const url = this.router.url;
+    return url.includes(`/conversations/${this.conversationId}`);
+  }
+
   private markReadIfVisible(): void {
+    if (!this.isActiveConversation()) return;
     const lastFromOther = [...this.displayMessages]
       .filter(m => !m.isMine && !m.pending)
       .at(-1);
@@ -436,7 +476,6 @@ export class ConversationPage implements OnInit, OnDestroy {
     this.subs.add(
       this.socketSvc.receiptUpdate$.subscribe(payload => {
         if (payload.conversationId !== this.conversationId) return;
-        this.cdr.detectChanges();
       }),
     );
 
@@ -448,7 +487,6 @@ export class ConversationPage implements OnInit, OnDestroy {
           this.upsertDisplay(msg);
         }
         this.displayMessages.sort((a, b) => a.createdAt - b.createdAt);
-        this.cdr.detectChanges();
         this.scrollToBottom();
       }),
     );
@@ -517,7 +555,6 @@ export class ConversationPage implements OnInit, OnDestroy {
         if (!isMine) {
           this.socketSvc.sendMessageDelivered(msg.conversationId, msg.id, msg.senderDid);
         }
-        this.cdr.detectChanges();
         this.scrollToBottom();
       }),
     );
@@ -632,12 +669,13 @@ export class ConversationPage implements OnInit, OnDestroy {
       this.error = err instanceof Error ? err.message : 'Could not re-establish encryption.';
     } finally {
       this.reestablishing = false;
-      this.cdr.detectChanges();
     }
   }
 
   private scrollToBottom(): void {
-    setTimeout(() => {
+    if (this.scrollTimer !== null) clearTimeout(this.scrollTimer);
+    this.scrollTimer = setTimeout(() => {
+      this.scrollTimer = null;
       void this.ionContent?.scrollToBottom(200);
     }, 50);
   }

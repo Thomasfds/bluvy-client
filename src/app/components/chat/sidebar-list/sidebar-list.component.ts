@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, inject, signal, computed, effect } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject, signal, computed, effect, ChangeDetectorRef } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
 import { AsyncPipe } from '@angular/common';
 import { Subscription, firstValueFrom } from 'rxjs';
@@ -25,6 +25,13 @@ import { environment } from '../../../../environments/environment';
 
 const SYNC_INTERVAL_MS = 3 * 60 * 1000;
 
+/**
+ * CHANGE DETECTION NOTE:
+ * This component is fully compatible with ChangeDetectionStrategy.OnPush.
+ * All 6 real-time RxJS subscriptions (unreadCount$, messageNew$, conversationNew$,
+ * reconnect$, stored$) that update raw class fields have been updated to explicitly
+ * call `cdr.markForCheck()` to ensure UI updates under OnPush strategies.
+ */
 @Component({
   selector: 'app-sidebar-list',
   templateUrl: './sidebar-list.component.html',
@@ -50,6 +57,7 @@ export class SidebarListComponent implements OnInit, OnDestroy {
   readonly bpSvc       = inject(BreakpointService);
   private contactsSvc  = inject(ContactsService);
   private coordinator  = inject(MlsCoordinatorBase);
+  private cdr          = inject(ChangeDetectorRef);
 
   conversations: ConversationListItem[] = [];
   loading = false;
@@ -58,6 +66,7 @@ export class SidebarListComponent implements OnInit, OnDestroy {
   activeTab: 'conversations' | 'contacts' = 'conversations';
 
   contactsLoading  = false;
+  contactsError    = '';
   contactSearchQuery = '';
   openingContactId = '';
   bluvyContacts:   Contact[]        = [];
@@ -136,7 +145,10 @@ export class SidebarListComponent implements OnInit, OnDestroy {
       this.unreadSubs = new Subscription();
       for (const conv of this.conversations) {
         this.unreadSubs.add(
-          this.receiptsSvc.unreadCount$(conv.id).subscribe(count => { conv.unreadCount = count; }),
+          this.receiptsSvc.unreadCount$(conv.id).subscribe(count => {
+            conv.unreadCount = count;
+            this.cdr.markForCheck();
+          }),
         );
       }
       this.loadPreviews();
@@ -168,13 +180,18 @@ export class SidebarListComponent implements OnInit, OnDestroy {
     const userDid = this.authSvc.currentUser()?.did;
     if (!userDid) return;
     this.contactsLoading = true;
+    this.contactsError   = '';
     try {
       const result = await this.contactsSvc.sync(userDid);
       this.bluvyContacts   = result.bluvyContacts;
       this.blueskyContacts = result.blueskyContacts;
       this.applyContactSearch();
+    } catch (err) {
+      this.contactsError = 'contacts.error.load';
+      if (!environment.production) console.error('[SidebarListComponent] loadContacts failed:', err);
     } finally {
       this.contactsLoading = false;
+      this.cdr.markForCheck();
     }
   }
 
@@ -239,13 +256,25 @@ export class SidebarListComponent implements OnInit, OnDestroy {
   }
 
   private setupSocketSubs(): void {
-    this.subs.add(this.socketSvc.messageNew$.subscribe(msg => this.onMessageNew(msg)));
-    this.subs.add(this.socketSvc.conversationNew$.subscribe(conv => this.onConversationNew(conv)));
-    this.subs.add(this.socketSvc.reconnect$.subscribe(() => void this.load()));
+    this.subs.add(this.socketSvc.messageNew$.subscribe(msg => {
+      this.onMessageNew(msg);
+      this.cdr.markForCheck();
+    }));
+    this.subs.add(this.socketSvc.conversationNew$.subscribe(conv => {
+      this.onConversationNew(conv);
+      this.cdr.markForCheck();
+    }));
+    this.subs.add(this.socketSvc.reconnect$.subscribe(() => {
+      void this.load();
+      this.cdr.markForCheck();
+    }));
     this.subs.add(
       this.cacheSvc.stored$.subscribe(msg => {
         const conv = this.conversations.find(c => c.lastMessageId === msg.id);
-        if (conv) this.previews.set(msg.id, msg.plaintext);
+        if (conv) {
+          this.previews.set(msg.id, msg.plaintext);
+          this.cdr.markForCheck();
+        }
       }),
     );
   }
@@ -278,7 +307,10 @@ export class SidebarListComponent implements OnInit, OnDestroy {
     this.unreadSubs.add(
       this.receiptsSvc.unreadCount$(payload.id).subscribe(count => {
         const c = this.conversations.find(x => x.id === payload.id);
-        if (c) c.unreadCount = count;
+        if (c) {
+          c.unreadCount = count;
+          this.cdr.markForCheck();
+        }
       }),
     );
   }

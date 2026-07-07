@@ -38,6 +38,8 @@ export interface IMessageStore {
   // Updates senderDid and isMine on the plain record without re-encrypting the blob.
   // Returns true if the record was found and the value actually changed.
   updateSenderDid(id: string, senderDid: string, isMine: boolean): Promise<boolean>;
+  updateSenderDidMany(updates: { id: string; senderDid: string; isMine: boolean }[]): Promise<void>;
   delete(id: string): Promise<void>;
   clear(): Promise<void>;
+  close(): Promise<void>;
 }

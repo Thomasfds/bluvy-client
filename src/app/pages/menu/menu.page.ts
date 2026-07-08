@@ -2,7 +2,7 @@ import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { IonContent, IonIcon } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { eyeOffOutline } from 'ionicons/icons';
+import { eyeOffOutline, documentTextOutline } from 'ionicons/icons';
 import { AvatarComponent } from '../../components/ui/avatar/avatar.component';
 import { AuthService } from '../../core/auth/auth.service';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
@@ -20,7 +20,7 @@ export class MenuPage {
   private router = inject(Router);
 
   constructor() {
-    addIcons({ eyeOffOutline });
+    addIcons({ eyeOffOutline, documentTextOutline });
   }
 
   openSecurity(): void {
@@ -33,6 +33,10 @@ export class MenuPage {
 
   openSettings(): void {
     void this.router.navigate([ROUTES.settings]);
+  }
+
+  openLogs(): void {
+    void this.router.navigate([ROUTES.logs]);
   }
 
   openAbout(): void {

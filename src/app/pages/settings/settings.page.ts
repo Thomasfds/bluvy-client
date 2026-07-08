@@ -1,6 +1,8 @@
 import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { IonContent, IonIcon } from '@ionic/angular/standalone';
+import { addIcons } from 'ionicons';
+import { documentTextOutline } from 'ionicons/icons';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
 import { ROUTES } from '../../core/routes';
 
@@ -13,6 +15,10 @@ import { ROUTES } from '../../core/routes';
 })
 export class SettingsPage {
   private router = inject(Router);
+
+  constructor() {
+    addIcons({ documentTextOutline });
+  }
 
   goBack(): void {
     void this.router.navigate([ROUTES.menu]);
@@ -32,6 +38,10 @@ export class SettingsPage {
 
   openDevices(): void {
     void this.router.navigate([ROUTES.devices]);
+  }
+
+  openLogs(): void {
+    void this.router.navigate([ROUTES.logs]);
   }
 
   confirmingDelete = false;

@@ -27,6 +27,7 @@ import { KeyPackageService } from './core/mls/key-package/key-package.service';
 import { MlsCoordinatorBase } from './core/mls/coordinator/mls-coordinator.base';
 import { ThemeService } from './core/theme/theme.service';
 import { NavigationRedirectService } from './core/auth/navigation-redirect.service';
+import { LogService } from './core/logging/log.service';
 
 @Component({
   selector: 'app-root',
@@ -41,6 +42,7 @@ export class AppComponent implements OnInit, OnDestroy {
   private coordinator  = inject(MlsCoordinatorBase);
 
   constructor() {
+    inject(LogService);
     inject(ThemeService);
     inject(NavigationRedirectService);
     addIcons({

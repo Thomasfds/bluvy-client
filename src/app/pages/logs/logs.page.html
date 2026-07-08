@@ -1,0 +1,44 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/menu"></ion-back-button>
+    </ion-buttons>
+    <ion-title>{{ 'logs.title' | translate }}</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="copyLogs()" [disabled]="logSvc.logs().length === 0">
+        <ion-icon slot="icon-only" name="copy-outline"></ion-icon>
+      </ion-button>
+      <ion-button (click)="clearLogs()" [disabled]="logSvc.logs().length === 0">
+        <ion-icon slot="icon-only" name="trash-outline" color="danger"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+  <ion-toolbar class="search-toolbar">
+    <ion-searchbar
+      [placeholder]="'logs.search' | translate"
+      (ionInput)="onSearchChange($event)"
+      [debounce]="200"
+    ></ion-searchbar>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <div class="logs-container">
+    @if (filteredLogs().length === 0) {
+      <div class="empty-state">
+        <ion-icon name="document-text-outline" class="empty-state__icon"></ion-icon>
+        <p class="empty-state__text">Aucun log à afficher</p>
+      </div>
+    } @else {
+      <div class="log-rows">
+        @for (log of filteredLogs(); track $index) {
+          <div class="log-row" [ngClass]="'log-row--' + log.type">
+            <span class="log-row__time">[{{ log.timestamp }}]</span>
+            <span class="log-row__type">[{{ log.type.toUpperCase() }}]</span>
+            <span class="log-row__message">{{ log.message }}</span>
+          </div>
+        }
+      </div>
+    }
+  </div>
+</ion-content>

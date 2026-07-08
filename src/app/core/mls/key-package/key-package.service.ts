@@ -65,10 +65,7 @@ export class KeyPackageService {
   }
 
   async syncDeclaration(userDid: string): Promise<void> {
-    if (!this.oauthSvc.session) {
-      if (!environment.production) console.log('[KeyPackageService] syncDeclaration skipped: no active session');
-      return;
-    }
+    if (!this.oauthSvc.session) return;
     try {
       const showButtonTo = this.privacyPrefs.showButtonTo();
       const expectedUrl  = `https://bluvy.app/message#${userDid}`;
@@ -89,12 +86,8 @@ export class KeyPackageService {
         cache.showButtonTo === showButtonTo &&
         cache.messageMeUrl === expectedUrl;
 
-      if (isCacheValid) {
-        if (!environment.production) console.log('[KeyPackageService] syncDeclaration: skipped (cache < 24h)');
-        return;
-      }
+      if (isCacheValid) return;
 
-      if (!environment.production) console.log('[KeyPackageService] syncDeclaration: starting remote check...');
       // Read the current record from the PDS
       const existing = await this.atprotoRepo.getDeclaration();
 

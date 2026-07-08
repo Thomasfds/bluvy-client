@@ -148,6 +148,7 @@ export const en: Record<string, string> = {
   'settings.language.label': 'Choose the interface language',
   'settings.section.account': 'Account',
   'settings.devices': 'Connected devices',
+  'settings.section.advanced': 'Advanced',
   'settings.delete_account': 'Delete my account',
   'settings.delete_confirm': 'This action is irreversible. All your Bluvy data will be deleted.',
   'settings.delete_support': 'Contact support',
@@ -340,4 +341,10 @@ export const en: Record<string, string> = {
   'legal.licenses.texts': 'License texts',
   'legal.licenses.texts_desc': 'Full license texts are available in the respective project repositories on GitHub and npm.',
   'legal.en_only': 'This document is only available in French.',
+  'menu.logs': 'Diagnostic Logs',
+  'logs.title': 'Diagnostic Logs',
+  'logs.search': 'Search logs...',
+  'logs.clear': 'Clear logs',
+  'logs.copy': 'Copy logs',
+  'logs.copied': 'Logs copied to clipboard.',
 };

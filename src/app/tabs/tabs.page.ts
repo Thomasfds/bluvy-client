@@ -49,6 +49,11 @@ export class TabsPage {
   readonly showTabBar = computed(() =>
     !this.bpSvc.isTablet() && !this.isConvRoute());
 
+  readonly showSidebarList = computed(() => {
+    const url = this.currentUrl() ?? '';
+    return url.startsWith(this.routes.conversations) || url.startsWith(this.routes.contacts);
+  });
+
   isActive(prefix: string): boolean {
     const url = this.currentUrl() ?? '';
     return url === prefix || url.startsWith(prefix + '/');

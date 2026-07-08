@@ -27,4 +27,5 @@ export const ROUTES = {
   security:           '/security',
   devices:            '/devices',
   about:              '/about',
+  logs:               '/logs',
 } as const;

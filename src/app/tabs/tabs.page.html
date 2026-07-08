@@ -92,9 +92,11 @@
 
     </aside>
 
-    <div class="sidebar-list">
-      <app-sidebar-list></app-sidebar-list>
-    </div>
+    @if (showSidebarList()) {
+      <div class="sidebar-list">
+        <app-sidebar-list></app-sidebar-list>
+      </div>
+    }
   }
 
   <div class="app-main">

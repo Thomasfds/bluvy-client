@@ -54,18 +54,21 @@ export class OAuthService {
       typeof window !== 'undefined' &&
       window.location.hostname === 'localhost'
     ) {
+      console.log('[OAuthService] tryHandleInit skipped (localhost)');
       return null;
     }
 
     try {
+      console.log('[OAuthService] tryHandleInit started');
       const client = await this.getClient();
       const result = await client.init();
+      console.log('[OAuthService] tryHandleInit completed, result:', result ? 'session found' : 'no session');
       if (result) {
         this._session = result.session;
         return result.session;
       }
-    } catch {
-      // No callback params and no stored session — normal on first launch.
+    } catch (err) {
+      console.error('[OAuthService] tryHandleInit failed:', err);
     }
     return null;
   }
@@ -105,14 +108,16 @@ export class OAuthService {
    */
   async tryRestore(): Promise<OAuthSession | null> {
     try {
+      console.log('[OAuthService] tryRestore started');
       const client = await this.getClient();
       const result = await client.initRestore();
+      console.log('[OAuthService] initRestore completed, result:', result ? 'session found' : 'no session');
       if (result) {
         this._session = result.session;
         return result.session;
       }
-    } catch {
-      // No stored session — normal on first launch.
+    } catch (err) {
+      console.error('[OAuthService] tryRestore failed:', err);
     }
     return null;
   }

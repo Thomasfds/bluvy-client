@@ -178,6 +178,18 @@ export const fr: Record<string, string> = {
   'security.privacy.invite.following': 'Utilisateurs suivis',
   'security.privacy.invite.none': 'Personne',
 
+  'security.bsky_dm.section': 'Messages privés Bluesky',
+  'security.bsky_dm.allow_incoming': 'Autoriser les messages privés de',
+  'security.bsky_dm.allow_incoming.sub': 'Contrôle qui peut vous envoyer un message sur Bluesky. Recommandé : Tout le monde, pour recevoir les invitations Bluvy.',
+  'security.bsky_dm.allow_incoming.all': 'Tout le monde',
+  'security.bsky_dm.allow_incoming.following': 'Personnes que je suis',
+  'security.bsky_dm.allow_incoming.none': 'Personne',
+  'security.bsky_dm.allow_group_invites': 'Autoriser les invitations de groupe de',
+  'security.bsky_dm.allow_group_invites.sub': 'Contrôle qui peut vous inviter à des chats de groupe sur Bluesky.',
+  'security.bsky_dm.saving': 'Enregistrement…',
+  'security.bsky_dm.saved': 'Enregistré',
+  'security.bsky_dm.error': 'Échec de la mise à jour',
+
   'devices.title': 'Appareils',
   'devices.section': 'Appareils connectés',
   'devices.this': 'Cet appareil',

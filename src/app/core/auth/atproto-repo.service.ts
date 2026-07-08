@@ -68,11 +68,67 @@ export class AtprotoRepoService {
     }
   }
 
+  /**
+   * Reads the Bluesky DM privacy setting directly from the user's PDS repo
+   * via an unauthenticated public fetch — no OAuth session required.
+   * Returns null only on unexpected network/server errors.
+   * When the record is absent, Bluesky's effective default is 'following'.
+   */
+  async getBlueskyDmSettings(
+    did:    string,
+    pdsUrl: string,
+  ): Promise<{ allowIncoming: 'all' | 'none' | 'following'; allowGroupInvites: 'all' | 'none' | 'following' } | null> {
+    try {
+      const url = new URL(`${pdsUrl}/xrpc/com.atproto.repo.getRecord`);
+      url.searchParams.set('repo',       did);
+      url.searchParams.set('collection', 'chat.bsky.actor.declaration');
+      url.searchParams.set('rkey',       'self');
 
+      const res = await fetch(url.toString());
+
+      // Record never set → Bluesky effective default is 'following' for both
+      if (res.status === 404 || res.status === 400) {
+        return { allowIncoming: 'following', allowGroupInvites: 'following' };
+      }
+      if (!res.ok) return null;
+
+      const data = await res.json() as { value?: { allowIncoming?: string; allowGroupInvites?: string } };
+      const allowIncoming = data?.value?.allowIncoming as 'all' | 'none' | 'following' | undefined;
+      const allowGroupInvites = data?.value?.allowGroupInvites as 'all' | 'none' | 'following' | undefined;
+      return {
+        allowIncoming: allowIncoming ?? 'following',
+        allowGroupInvites: allowGroupInvites ?? 'following'
+      };
+    } catch {
+      return null;
+    }
+  }
 
   /**
-   * Deletes the com.bluvy.declaration record from the user's ATProto repository.
+   * Writes the Bluesky DM privacy settings (chat.bsky.actor.declaration).
+   * Controls who can send direct messages and group invites to this user on Bluesky.
    */
+  async setBlueskyDmSettings(
+    allowIncoming: 'all' | 'none' | 'following',
+    allowGroupInvites: 'all' | 'none' | 'following'
+  ): Promise<void> {
+    const agent = this.getAgent();
+    if (!agent || !this.oauth.session?.sub) {
+      throw new Error('No active ATProto session');
+    }
+
+    await agent.com.atproto.repo.putRecord({
+      repo:       this.oauth.session.sub,
+      collection: 'chat.bsky.actor.declaration',
+      rkey:       'self',
+      record:     {
+        $type: 'chat.bsky.actor.declaration',
+        allowIncoming,
+        allowGroupInvites
+      },
+    });
+  }
+
   async deleteDeclaration(): Promise<void> {
     const agent = this.getAgent();
     if (!agent || !this.oauth.session?.sub) {

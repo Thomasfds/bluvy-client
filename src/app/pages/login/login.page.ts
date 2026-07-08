@@ -4,6 +4,7 @@ import { ApiClientService } from '../../core/infrastructure/api-client.service';
 import { IonContent, IonIcon } from '@ionic/angular/standalone';
 import { AuthService } from '../../core/auth/auth.service';
 import { OAuthService } from '../../core/auth/oauth.service';
+import { SyncService } from '../../core/sync/sync.service';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
 import { TranslationService } from '../../core/i18n/translation.service';
 import { ROUTES } from '../../core/routes';
@@ -16,10 +17,11 @@ import { ROUTES } from '../../core/routes';
   imports: [IonContent, IonIcon, TranslatePipe],
 })
 export class LoginPage implements OnInit {
-  private router   = inject(Router);
-  private auth     = inject(AuthService);
-  private oauthSvc = inject(OAuthService);
-  private i18n     = inject(TranslationService);
+  private router    = inject(Router);
+  private auth      = inject(AuthService);
+  private oauthSvc  = inject(OAuthService);
+  private syncSvc   = inject(SyncService);
+  private i18n      = inject(TranslationService);
   private apiClient = inject(ApiClientService);
 
   handle   = '';
@@ -44,7 +46,9 @@ export class LoginPage implements OnInit {
     }
 
     if (this.auth.isAuthenticated()) {
-      await this.router.navigate([ROUTES.conversations]);
+      if (this.syncSvc.isMbkAvailable()) {
+        await this.router.navigate([ROUTES.conversations]);
+      }
       return;
     }
 
@@ -54,6 +58,9 @@ export class LoginPage implements OnInit {
     if (oauthSession) {
       try {
         await this.auth.loginWithOAuthSession(oauthSession);
+        if (this.syncSvc.isMbkAvailable()) {
+          await this.router.navigate([ROUTES.conversations]);
+        }
         return;
       } catch {
         // Session invalid; fall through to backend session restore.
@@ -63,7 +70,9 @@ export class LoginPage implements OnInit {
     try {
       const restored = await this.auth.restoreSession();
       if (restored) {
-        await this.router.navigate([ROUTES.conversations]);
+        if (this.syncSvc.isMbkAvailable()) {
+          await this.router.navigate([ROUTES.conversations]);
+        }
       }
     } finally {
       this.checking = false;
@@ -90,6 +99,9 @@ export class LoginPage implements OnInit {
         console.log('[LoginPage] calling loginWithOAuthSession');
         await this.auth.loginWithOAuthSession(session);
         console.log('[LoginPage] loginWithOAuthSession completed');
+        if (this.syncSvc.isMbkAvailable()) {
+          await this.router.navigate([ROUTES.conversations]);
+        }
       } else {
         console.log('[LoginPage] session is null');
         this.loading = false;

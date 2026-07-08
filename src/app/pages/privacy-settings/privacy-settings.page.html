@@ -47,6 +47,62 @@
             <ion-select-option value="none">{{ 'security.privacy.invite.none' | translate }}</ion-select-option>
           </ion-select>
         </div>
+
+        <div class="settings-row">
+          <div class="settings-row__body">
+            <span class="settings-row__label">{{ 'security.bsky_dm.allow_incoming' | translate }}</span>
+            <span class="settings-row__sub">{{ 'security.bsky_dm.allow_incoming.sub' | translate }}</span>
+          </div>
+
+          @if (dmLoadError()) {
+            <button class="settings-row__retry" (click)="retryLoadDmSettings()" slot="end">↻</button>
+          } @else if (dmAllowIncoming() === null) {
+            <span class="settings-row__loading" slot="end">…</span>
+          } @else {
+            <ion-select
+              [value]="dmAllowIncoming()"
+              [disabled]="dmSaveStatus() === 'saving'"
+              (ionChange)="setBlueskyAllowIncoming($event)"
+              interface="action-sheet"
+              slot="end">
+              <ion-select-option value="all">{{ 'security.bsky_dm.allow_incoming.all' | translate }}</ion-select-option>
+              <ion-select-option value="following">{{ 'security.bsky_dm.allow_incoming.following' | translate }}</ion-select-option>
+              <ion-select-option value="none">{{ 'security.bsky_dm.allow_incoming.none' | translate }}</ion-select-option>
+            </ion-select>
+          }
+        </div>
+
+        <div class="settings-row">
+          <div class="settings-row__body">
+            <span class="settings-row__label">{{ 'security.bsky_dm.allow_group_invites' | translate }}</span>
+            <span class="settings-row__sub">{{ 'security.bsky_dm.allow_group_invites.sub' | translate }}</span>
+          </div>
+
+          @if (dmLoadError()) {
+            <button class="settings-row__retry" (click)="retryLoadDmSettings()" slot="end">↻</button>
+          } @else if (dmAllowGroupInvites() === null) {
+            <span class="settings-row__loading" slot="end">…</span>
+          } @else {
+            <ion-select
+              [value]="dmAllowGroupInvites()"
+              [disabled]="dmSaveStatus() === 'saving'"
+              (ionChange)="setBlueskyAllowGroupInvites($event)"
+              interface="action-sheet"
+              slot="end">
+              <ion-select-option value="all">{{ 'security.bsky_dm.allow_incoming.all' | translate }}</ion-select-option>
+              <ion-select-option value="following">{{ 'security.bsky_dm.allow_incoming.following' | translate }}</ion-select-option>
+              <ion-select-option value="none">{{ 'security.bsky_dm.allow_incoming.none' | translate }}</ion-select-option>
+            </ion-select>
+          }
+        </div>
+
+        @if (dmSaveStatus() !== 'idle') {
+          <div class="settings-row__status" [class.error]="dmSaveStatus() === 'error'">
+            @if (dmSaveStatus() === 'saving') { {{ 'security.bsky_dm.saving' | translate }} }
+            @if (dmSaveStatus() === 'saved')  { {{ 'security.bsky_dm.saved' | translate }} }
+            @if (dmSaveStatus() === 'error')  { {{ 'security.bsky_dm.error' | translate }} }
+          </div>
+        }
       </div>
     </div>
 

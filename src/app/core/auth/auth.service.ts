@@ -185,6 +185,8 @@ export class AuthService {
     this.startSocket();
     this.bindSyncListeners();
 
+    await this.oauthSvc.tryRestore().catch(() => {});
+
     await this.coordinator.initializeForSession(session.user, sessionDevice)
       .catch(err => { if (!environment.production) console.error('[AuthService] restoreSession: initializeForSession failed', err); });
     await this.kpSvc.ensureKeyPackagePool(session.user.did, sessionDevice.id)

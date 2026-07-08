@@ -178,6 +178,18 @@ export const en: Record<string, string> = {
   'security.privacy.invite.following': 'Users I Follow',
   'security.privacy.invite.none': 'No one',
 
+  'security.bsky_dm.section': 'Bluesky Direct Messages',
+  'security.bsky_dm.allow_incoming': 'Allow direct messages from',
+  'security.bsky_dm.allow_incoming.sub': 'Controls who can send you a message on Bluesky. Recommended: Everyone, to receive Bluvy invitations.',
+  'security.bsky_dm.allow_incoming.all': 'Everyone',
+  'security.bsky_dm.allow_incoming.following': 'People I follow',
+  'security.bsky_dm.allow_incoming.none': 'No one',
+  'security.bsky_dm.allow_group_invites': 'Allow group chat invites from',
+  'security.bsky_dm.allow_group_invites.sub': 'Controls who can invite you to group chats on Bluesky.',
+  'security.bsky_dm.saving': 'Saving…',
+  'security.bsky_dm.saved': 'Saved',
+  'security.bsky_dm.error': 'Update failed',
+
   'devices.title': 'Devices',
   'devices.section': 'Connected devices',
   'devices.this': 'This device',

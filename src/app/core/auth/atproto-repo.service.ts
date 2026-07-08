@@ -27,9 +27,7 @@ export class AtprotoRepoService {
     }
 
     const repo = this.oauth.session.sub;
-    const cleanOrigin = window.location.origin.endsWith('/') ? window.location.origin.slice(0, -1) : window.location.origin;
-    const baseUrl = environment.production ? 'https://bluvy.app' : cleanOrigin;
-    const messageMeUrl = `${baseUrl}/message#${repo}`;
+    const messageMeUrl = `https://bluvy.app/message#${repo}`;
 
     const record = {
       version: environment.version,

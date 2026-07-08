@@ -65,22 +65,38 @@ export class KeyPackageService {
   }
 
   async syncDeclaration(userDid: string): Promise<void> {
-    if (!this.oauthSvc.session) return;
+    if (!this.oauthSvc.session) {
+      if (!environment.production) console.log('[KeyPackageService] syncDeclaration skipped: no active session');
+      return;
+    }
     try {
       const showButtonTo = this.privacyPrefs.showButtonTo();
-      const cacheKey     = `bluvy-declaration-checked-${userDid}`;
+      const expectedUrl  = `https://bluvy.app/message#${userDid}`;
+
+      const cacheKey     = `bluvy-declaration-cache-${userDid}`;
       const TTL_MS       = 24 * 60 * 60 * 1000; // 24 hours
 
-      const lastChecked = localStorage.getItem(cacheKey);
-      if (lastChecked && Date.now() - parseInt(lastChecked, 10) < TTL_MS) return;
+      const cacheStr = localStorage.getItem(cacheKey);
+      let cache: any = null;
+      try {
+        if (cacheStr) cache = JSON.parse(cacheStr);
+      } catch {}
 
+      const isCacheValid =
+        cache &&
+        (Date.now() - cache.timestamp < TTL_MS) &&
+        cache.version === environment.version &&
+        cache.showButtonTo === showButtonTo &&
+        cache.messageMeUrl === expectedUrl;
+
+      if (isCacheValid) {
+        if (!environment.production) console.log('[KeyPackageService] syncDeclaration: skipped (cache < 24h)');
+        return;
+      }
+
+      if (!environment.production) console.log('[KeyPackageService] syncDeclaration: starting remote check...');
       // Read the current record from the PDS
       const existing = await this.atprotoRepo.getDeclaration();
-
-      // Build what the record should look like right now
-      const cleanOrigin  = window.location.origin.endsWith('/') ? window.location.origin.slice(0, -1) : window.location.origin;
-      const baseUrl      = environment.production ? 'https://bluvy.app' : cleanOrigin;
-      const expectedUrl  = `${baseUrl}/message#${userDid}`;
 
       const needsWrite =
         !existing ||
@@ -92,10 +108,18 @@ export class KeyPackageService {
         await this.atprotoRepo.publishDeclaration(showButtonTo);
       }
 
-      localStorage.setItem(cacheKey, String(Date.now()));
+      localStorage.setItem(
+        cacheKey,
+        JSON.stringify({
+          timestamp: Date.now(),
+          version:   environment.version,
+          showButtonTo,
+          messageMeUrl: expectedUrl,
+        })
+      );
     } catch (err) {
       if (!environment.production) console.error('[KeyPackageService] syncDeclaration failed:', err);
-      // Do not write the cache timestamp on failure — next startup will retry
+      // Do not write the cache on failure — next startup will retry
     }
   }
 

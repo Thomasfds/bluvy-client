@@ -128,6 +128,8 @@ export class AuthService {
     await this.syncSvc.initialize(response.user.did, response.device.id)
       .catch(err => { if (!environment.production) console.error('[AuthService] login: sync initialize failed', err); });
 
+    void this.kpSvc.syncDeclaration(response.user.did);
+
     // If MBK loaded from SecureLocalStorage → navigate to conversations.
     // Otherwise, setupRequired$ or pinRequired$ subscription handles navigation.
     if (this.syncSvc.isMbkAvailable()) {
@@ -193,6 +195,8 @@ export class AuthService {
       .catch(err => { if (!environment.production) console.error('[AuthService] restoreSession: ensureKeyPackagePool failed', err); });
     await this.syncSvc.initialize(session.user.did, session.device.id)
       .catch(err => { if (!environment.production) console.error('[AuthService] restoreSession: sync initialize failed', err); });
+
+    void this.kpSvc.syncDeclaration(session.user.did);
 
     return true;
   }

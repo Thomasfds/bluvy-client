@@ -34,6 +34,6 @@ export class PrivacyPreferencesService {
     localStorage.setItem(PrivacyPreferencesService.KEY_SHOW_BTN, value);
     this.showButtonTo.set(value);
     // Invalidate the declaration cache so syncDeclaration will re-publish on next startup
-    localStorage.removeItem(`bluvy-declaration-checked-${userDid}`);
+    localStorage.removeItem(`bluvy-declaration-cache-${userDid}`);
   }
 }

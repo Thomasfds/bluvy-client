@@ -15,7 +15,7 @@
   }
 
   &__initials {
-    color: #fff;
+    color: var(--color-on-primary);
     font-family: var(--font-sans);
     font-weight: var(--weight-semibold);
     line-height: 1;

@@ -93,7 +93,7 @@ export class MlsCoordinatorService extends MlsCoordinatorBase {
   override readonly pendingDecryptReplayed$ = this._pendingDecryptReplayed$$.asObservable();
   override readonly restoreCompleted$       = this._restoreCompleted$$.asObservable();
 
-  // Called by BackupService at construction time to avoid a circular DI cycle.
+  // Called by SyncService at construction time to avoid a circular DI cycle.
   setBackupService(svc: BackupEnqueuerLike): void {
     this.backupSvcRef = svc;
   }
@@ -488,8 +488,14 @@ export class MlsCoordinatorService extends MlsCoordinatorBase {
   // Schedules an auto-recovery attempt from FAILED state (backoff: 5s, 15s, 45s).
   // Stops after 3 failed attempts. Safe to call multiple times — deduplicates by convId.
   private scheduleFailedRecovery(convId: string, user: UserProfile, device: DeviceInfo): void {
-    const attempts = this.failedRecovery.get(convId)?.attempts ?? 0;
-    if (attempts >= 3) return;
+    const existing = this.failedRecovery.get(convId);
+    if (existing?.timerId) clearTimeout(existing.timerId);
+
+    const attempts = existing?.attempts ?? 0;
+    if (attempts >= 3) {
+      this.failedRecovery.delete(convId);
+      return;
+    }
 
     const delays = [5_000, 15_000, 45_000] as const;
     const timerId = setTimeout(() => {

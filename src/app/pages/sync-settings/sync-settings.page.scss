@@ -158,7 +158,7 @@ ion-content {
 
   &--primary {
     background: var(--color-primary);
-    color: #fff;
+    color: var(--color-on-primary);
   }
 
   &--ghost {

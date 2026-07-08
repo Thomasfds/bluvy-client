@@ -15,9 +15,10 @@ export class AtprotoRepoService {
 
   /**
    * Publishes or updates the com.bluvy.declaration record in the user's ATProto repository.
+   * The record signals that this DID is a Bluvy user and exposes the "message me" link.
+   * No cryptographic material is stored — the DID alone is sufficient to initiate a conversation.
    */
   async publishDeclaration(
-    currentKey: Uint8Array,
     showButtonTo: 'none' | 'usersIFollow' | 'everyone' = 'everyone'
   ): Promise<void> {
     const agent = this.getAgent();
@@ -27,11 +28,11 @@ export class AtprotoRepoService {
 
     const repo = this.oauth.session.sub;
     const cleanOrigin = window.location.origin.endsWith('/') ? window.location.origin.slice(0, -1) : window.location.origin;
-    const messageMeUrl = environment.production ? 'https://bluvy.app/message' : `${cleanOrigin}/message`;
+    const baseUrl = environment.production ? 'https://bluvy.app' : cleanOrigin;
+    const messageMeUrl = `${baseUrl}/message#${repo}`;
 
     const record = {
       version: environment.version,
-      currentKey, // Uint8Array is serialized as bytes in DAG-CBOR
       messageMe: {
         showButtonTo,
         messageMeUrl
@@ -45,6 +46,29 @@ export class AtprotoRepoService {
       record
     });
   }
+
+  /**
+   * Reads the current com.bluvy.declaration record from the user's PDS repo.
+   * Returns null if the record does not exist (404).
+   */
+  async getDeclaration(): Promise<{ version: string; messageMe: { showButtonTo: string; messageMeUrl: string } } | null> {
+    const agent = this.getAgent();
+    if (!agent || !this.oauth.session?.sub) return null;
+
+    try {
+      const res = await agent.com.atproto.repo.getRecord({
+        repo:       this.oauth.session.sub,
+        collection: 'com.bluvy.declaration',
+        rkey:       'self',
+      });
+      return res.data.value as { version: string; messageMe: { showButtonTo: string; messageMeUrl: string } };
+    } catch {
+      // Record absent or any network error — treat as missing
+      return null;
+    }
+  }
+
+
 
   /**
    * Deletes the com.bluvy.declaration record from the user's ATProto repository.

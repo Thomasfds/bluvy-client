@@ -5,7 +5,7 @@ import {
   IonHeader, IonToolbar, IonTitle, IonContent,
   IonCard, IonCardHeader, IonCardTitle, IonCardContent,
   IonButton, IonInput, IonCheckbox, IonLabel, IonItem,
-  IonSpinner, IonText,
+  IonSpinner, IonText, ToastController,
 } from '@ionic/angular/standalone';
 import { SyncService } from '../../core/sync/sync.service';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
@@ -27,9 +27,10 @@ import { ROUTES } from '../../core/routes';
   styleUrls: ['./setup-sync.page.scss'],
 })
 export class SetupSyncPage {
-  private syncSvc = inject(SyncService);
-  private router  = inject(Router);
-  private i18n    = inject(TranslationService);
+  private syncSvc   = inject(SyncService);
+  private router    = inject(Router);
+  private i18n      = inject(TranslationService);
+  private toastCtrl = inject(ToastController);
 
   step           = 'pin' as 'pin' | 'key';
   pin            = '';
@@ -76,7 +77,24 @@ export class SetupSyncPage {
   }
 
   async copyKey(): Promise<void> {
-    try { await navigator.clipboard.writeText(this.recoveryKey); } catch { /* ignore */ }
+    try {
+      await navigator.clipboard.writeText(this.recoveryKey);
+      const toast = await this.toastCtrl.create({
+        message:  this.i18n.t('setup_sync.key.copied'),
+        duration: 2500,
+        position: 'bottom',
+        color:    'success',
+      });
+      await toast.present();
+    } catch {
+      const toast = await this.toastCtrl.create({
+        message:  this.i18n.t('setup_sync.key.copy_failed'),
+        duration: 3000,
+        position: 'bottom',
+        color:    'danger',
+      });
+      await toast.present();
+    }
   }
 
   async onContinue(): Promise<void> {

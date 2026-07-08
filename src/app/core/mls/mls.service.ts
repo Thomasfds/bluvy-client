@@ -89,7 +89,7 @@ export class MlsService {
   // arriving mls:commit event and the next message:new event.
   private readonly pendingCommits = new Map<string, Promise<void>>();
 
-  // Registered by BackupService at construction time to avoid a circular DI cycle.
+  // Registered by SyncService at construction time to avoid a circular DI cycle.
   private backupSvcRef: BackupServiceLike | null = null;
 
   setBackupService(svc: BackupServiceLike): void {

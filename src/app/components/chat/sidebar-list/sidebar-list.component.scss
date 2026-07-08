@@ -148,6 +148,10 @@
   align-items: center;
   gap: var(--space-3);
   padding: 10px var(--space-4);
+  background: none;
+  border: none;
+  font-family: inherit;
+  text-align: left;
   cursor: pointer;
   border-radius: 10px;
   margin: 2px var(--space-2);

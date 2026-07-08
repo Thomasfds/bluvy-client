@@ -68,7 +68,7 @@
     <div class="invite-modal-content">
       <div class="invite-modal-header">
         <h2>Inviter ce contact</h2>
-        <button class="close-btn" (click)="isInviteModalOpen = false" aria-label="Close">
+        <button class="close-btn" (click)="isInviteModalOpen = false" [attr.aria-label]="'common.close' | translate">
           <ion-icon name="close"></ion-icon>
         </button>
       </div>

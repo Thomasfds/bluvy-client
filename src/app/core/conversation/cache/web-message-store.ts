@@ -1,15 +1,9 @@
 import type { EncryptedCacheRecord, IMessageStore } from './message-cache.types';
-
-const DB_NAME    = 'skychat-message-cache';
-const DB_VERSION = 3;
-const KEY_STORE  = 'keys';
-const MSG_STORE  = 'messages';
+import { openMessageCacheDb, closeMessageCacheDb, MSG_STORE } from './idb-schema';
 
 export class WebMessageStore implements IMessageStore {
-  private db: IDBDatabase | null = null;
-
   async initialize(): Promise<void> {
-    this.db = await this.openDb();
+    await this.openDb();
     await this.pruneStale().catch(() => {});
   }
 
@@ -106,10 +100,7 @@ export class WebMessageStore implements IMessageStore {
   }
 
   async close(): Promise<void> {
-    if (this.db) {
-      this.db.close();
-      this.db = null;
-    }
+    closeMessageCacheDb();
   }
 
   async updateSenderDidMany(updates: { id: string; senderDid: string; isMine: boolean }[]): Promise<void> {
@@ -177,46 +168,7 @@ export class WebMessageStore implements IMessageStore {
   // ── Private ────────────────────────────────────────────────────────────────
 
   private openDb(): Promise<IDBDatabase> {
-    if (this.db) return Promise.resolve(this.db);
-
-    return new Promise<IDBDatabase>((resolve, reject) => {
-      const request = indexedDB.open(DB_NAME, DB_VERSION);
-
-      request.onupgradeneeded = (event: IDBVersionChangeEvent) => {
-        const db = request.result;
-        // V1→V2: full store reset
-        if (event.oldVersion > 0 && event.oldVersion < 2) {
-          if (db.objectStoreNames.contains(KEY_STORE)) db.deleteObjectStore(KEY_STORE);
-          if (db.objectStoreNames.contains(MSG_STORE)) db.deleteObjectStore(MSG_STORE);
-        }
-        if (!db.objectStoreNames.contains(KEY_STORE)) {
-          db.createObjectStore(KEY_STORE, { keyPath: 'id' });
-        }
-        if (!db.objectStoreNames.contains(MSG_STORE)) {
-          const store = db.createObjectStore(MSG_STORE, { keyPath: 'id' });
-          // Only indexes actually used by queries:
-          //   by-conversation-created → queryByConversation*, queryAllIds, queryNewestId
-          //   by-deleted              → pruneStale
-          store.createIndex('by-conversation-created', ['conversationId', 'createdAt'], { unique: false });
-          store.createIndex('by-deleted',              'deletedAt',                     { unique: false });
-        }
-        // V2→V3: drop unused indexes (by-conversation-id, by-cache-version, by-encryption-version)
-        if (event.oldVersion === 2) {
-          const tx = (event.target as IDBOpenDBRequest).transaction!;
-          const store = tx.objectStore(MSG_STORE);
-          for (const name of ['by-conversation-id', 'by-cache-version', 'by-encryption-version'] as const) {
-            if (store.indexNames.contains(name)) store.deleteIndex(name);
-          }
-        }
-      };
-
-      request.onsuccess = () => {
-        this.db = request.result;
-        resolve(request.result);
-      };
-      request.onerror = () =>
-        reject(request.error ?? new Error('Could not open message cache database'));
-    });
+    return openMessageCacheDb();
   }
 
   private putRecord(db: IDBDatabase, record: EncryptedCacheRecord): Promise<void> {

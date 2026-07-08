@@ -3,11 +3,10 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
 import { MlsService } from '../mls.service';
 import { KeyPackageRepository } from './key-package.repository';
-import { MlsStateStorageService } from '../mls-state-storage.service';
 import { AtprotoRepoService } from '../../auth/atproto-repo.service';
 import { OAuthService } from '../../auth/oauth.service';
+import { PrivacyPreferencesService } from '../../privacy/privacy-preferences.service';
 import type { KeyPackageCountResponse, KeyPackagePoolStatus } from './key-package.types';
-import type { StoredMlsState } from '../mls.types';
 
 export type { KeyPackageCountResponse, KeyPackagePoolStatus } from './key-package.types';
 
@@ -16,11 +15,11 @@ const KP_THRESHOLD = 10;
 
 @Injectable({ providedIn: 'root' })
 export class KeyPackageService {
-  private readonly kpRepo  = inject(KeyPackageRepository);
-  private readonly mlsSvc  = inject(MlsService);
-  private readonly atprotoRepo = inject(AtprotoRepoService);
-  private readonly storage     = inject(MlsStateStorageService);
-  private readonly oauthSvc     = inject(OAuthService);
+  private readonly kpRepo        = inject(KeyPackageRepository);
+  private readonly mlsSvc        = inject(MlsService);
+  private readonly atprotoRepo   = inject(AtprotoRepoService);
+  private readonly oauthSvc      = inject(OAuthService);
+  private readonly privacyPrefs  = inject(PrivacyPreferencesService);
 
   private _poolStatus:   KeyPackagePoolStatus = 'idle';
   private ensurePromise?: Promise<void>;
@@ -65,45 +64,39 @@ export class KeyPackageService {
     await this.mlsSvc.appendKeyPackagesToState(userDid, deviceId, generated);
   }
 
-  async syncDeclaration(userDid: string, deviceId: string): Promise<void> {
+  async syncDeclaration(userDid: string): Promise<void> {
     if (!this.oauthSvc.session) return;
     try {
-      const state = await this.storage.load<StoredMlsState>(this.mlsSvc.getStorageScope(userDid, deviceId));
-      if (!state) return;
+      const showButtonTo = this.privacyPrefs.showButtonTo();
+      const cacheKey     = `bluvy-declaration-checked-${userDid}`;
+      const TTL_MS       = 24 * 60 * 60 * 1000; // 24 hours
 
-      const rec = state.keyPackages?.find(k => k.serverId !== null);
-      if (!rec) return;
+      const lastChecked = localStorage.getItem(cacheKey);
+      if (lastChecked && Date.now() - parseInt(lastChecked, 10) < TTL_MS) return;
 
-      const binary = this.base64ToBytes(rec.serializedKeyPackage);
-      const { decodeMlsMessage } = await import('ts-mls');
-      const decoded = decodeMlsMessage(binary, 0);
-      const msg = decoded?.[0];
-      if (!msg || msg.wireformat !== 'mls_key_package') return;
+      // Read the current record from the PDS
+      const existing = await this.atprotoRepo.getDeclaration();
 
-      const signatureKey = msg.keyPackage?.leafNode?.signaturePublicKey;
-      if (!signatureKey) return;
+      // Build what the record should look like right now
+      const cleanOrigin  = window.location.origin.endsWith('/') ? window.location.origin.slice(0, -1) : window.location.origin;
+      const baseUrl      = environment.production ? 'https://bluvy.app' : cleanOrigin;
+      const expectedUrl  = `${baseUrl}/message#${userDid}`;
 
-      const showButtonTo = 'everyone';
-      const cacheKey = `bluvy-published-key-${userDid}-${showButtonTo}`;
-      const cachedHex = sessionStorage.getItem(cacheKey);
-      const currentHex = (Array.from(signatureKey) as number[]).map(x => x.toString(16).padStart(2, '0')).join('');
+      const needsWrite =
+        !existing ||
+        existing.version !== environment.version ||
+        existing.messageMe?.messageMeUrl !== expectedUrl ||
+        existing.messageMe?.showButtonTo  !== showButtonTo;
 
-      if (cachedHex === currentHex) return;
+      if (needsWrite) {
+        await this.atprotoRepo.publishDeclaration(showButtonTo);
+      }
 
-      await this.atprotoRepo.publishDeclaration(signatureKey, showButtonTo);
-      sessionStorage.setItem(cacheKey, currentHex);
+      localStorage.setItem(cacheKey, String(Date.now()));
     } catch (err) {
       if (!environment.production) console.error('[KeyPackageService] syncDeclaration failed:', err);
+      // Do not write the cache timestamp on failure — next startup will retry
     }
-  }
-
-  private base64ToBytes(value: string): Uint8Array {
-    const binary = atob(value);
-    const bytes  = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i += 1) {
-      bytes[i] = binary.charCodeAt(i);
-    }
-    return bytes;
   }
 
   async handleNoKeyPackages<T>(
@@ -140,7 +133,7 @@ export class KeyPackageService {
 
     if (!countResp.needsRefill) {
       this._poolStatus = 'idle';
-      await this.syncDeclaration(userDid, deviceId);
+      await this.syncDeclaration(userDid);
       return;
     }
 
@@ -148,7 +141,7 @@ export class KeyPackageService {
     try {
       await this.refillPool(userDid, deviceId, KP_TARGET - countResp.count);
       this._poolStatus = 'idle';
-      await this.syncDeclaration(userDid, deviceId);
+      await this.syncDeclaration(userDid);
     } catch (err) {
       this._poolStatus = 'error';
       throw err;

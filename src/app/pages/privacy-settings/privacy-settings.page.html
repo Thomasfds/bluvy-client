@@ -29,5 +29,27 @@
       </div>
     </div>
 
+    <div class="ss-section">
+      <div class="ss-section-title">Bluesky</div>
+      <div class="ss-block">
+        <div class="settings-row">
+          <div class="settings-row__body">
+            <span class="settings-row__label">{{ 'security.privacy.invite' | translate }}</span>
+            <span class="settings-row__sub">{{ 'security.privacy.invite.sub' | translate }}</span>
+          </div>
+          <ion-select
+            [value]="showButtonTo()"
+            (ionChange)="setVisibility($event)"
+            interface="action-sheet"
+            slot="end">
+            <ion-select-option value="everyone">{{ 'security.privacy.invite.everyone' | translate }}</ion-select-option>
+            <ion-select-option value="usersIFollow">{{ 'security.privacy.invite.following' | translate }}</ion-select-option>
+            <ion-select-option value="none">{{ 'security.privacy.invite.none' | translate }}</ion-select-option>
+          </ion-select>
+        </div>
+      </div>
+    </div>
+
   </div>
 </ion-content>
+

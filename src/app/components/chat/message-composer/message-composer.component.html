@@ -13,7 +13,7 @@
     type="button"
     [disabled]="disabled || !inputText.trim()"
     (click)="onSend()"
-    aria-label="Send"
+    [attr.aria-label]="'common.send' | translate"
   >
     <ion-icon name="send"></ion-icon>
   </button>

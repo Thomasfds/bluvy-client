@@ -7,10 +7,11 @@
   --color-primary:        #0A7CFF;
   --color-primary-hover:  #006AE6;
   --color-primary-active: #0057BE;
-  --color-border:         #E5E7EB;
-  --color-success:        #22C55E;
+  --color-on-primary:     #FFFFFF;
+  --color-border:         #9CA3AF;
+  --color-success:        #15803D;
   --color-warning:        #F59E0B;
-  --color-danger:         #EF4444;
+  --color-danger:         #DC2626;
 
   // ── Typography ───────────────────────────────────────────────────────────────
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
@@ -89,7 +90,9 @@ html.md.plt-hybrid {
     --color-surface:        #1E293B;
     --color-text-primary:   #F8FAFC;
     --color-text-secondary: #CBD5E1;
-    --color-border:         #334155;
+    --color-border:         #64748B;
+    --color-success:        #4ADE80;
+    --color-danger:         #F87171;
     --color-interactive-hover:  rgba(255, 255, 255, 0.06);
     --color-interactive-active: rgba(255, 255, 255, 0.10);
   }
@@ -102,7 +105,9 @@ html.theme-dark {
   --color-surface:        #1E293B;
   --color-text-primary:   #F8FAFC;
   --color-text-secondary: #CBD5E1;
-  --color-border:         #334155;
+  --color-border:         #64748B;
+  --color-success:        #4ADE80;
+  --color-danger:         #F87171;
   --color-interactive-hover:  rgba(255, 255, 255, 0.06);
   --color-interactive-active: rgba(255, 255, 255, 0.10);
 }
@@ -114,7 +119,9 @@ html.theme-dark {
     --color-surface:        #FFFFFF;
     --color-text-primary:   #111827;
     --color-text-secondary: #6B7280;
-    --color-border:         #E5E7EB;
+    --color-border:         #9CA3AF;
+    --color-success:        #15803D;
+    --color-danger:         #DC2626;
     --color-interactive-hover:  rgba(0, 0, 0, 0.04);
     --color-interactive-active: rgba(0, 0, 0, 0.07);
   }

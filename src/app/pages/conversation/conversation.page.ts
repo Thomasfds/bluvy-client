@@ -183,6 +183,8 @@ export class ConversationPage implements OnInit, OnDestroy {
   async sendMessage(text: string): Promise<void> {
     if (!text || this.sending) return;
 
+    this.error = '';
+
     const user   = this.authSvc.currentUser();
     const device = this.authSvc.currentDevice();
     if (!user || !device) {

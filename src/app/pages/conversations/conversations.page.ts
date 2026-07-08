@@ -36,10 +36,7 @@ export class ConversationsPage {
     const user = this.authSvc.currentUser();
     if (user) {
       // Verify and sync ATProto declaration record
-      const device = this.authSvc.currentDevice();
-      if (device) {
-        void this.kpSvc.syncDeclaration(user.did, device.id);
-      }
+      void this.kpSvc.syncDeclaration(user.did);
 
       // Process pending invitation deep links
       void this.redirectSvc.processPendingInvite(user.did);

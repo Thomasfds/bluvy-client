@@ -68,12 +68,6 @@ ion-content {
   --padding-end: 1rem;
 }
 
-// Class-based dark mode bubble override (ThemeService)
-html.theme-dark app-message-bubble .bubble--theirs {
-  background: #2C3348 !important;
-  border-color: transparent !important;
-}
-
 ion-list {
   background: var(--color-surface);
 }
@@ -96,6 +90,26 @@ ion-title {
   color: var(--color-text-primary);
   padding-inline-start: var(--space-4);
   text-align: left;
+}
+
+/* ── Focus visibility ─────────────────────────────────────────────── */
+/* Global fallback so any element that removes its native outline (e.g. custom
+   inputs/search boxes) still gets a visible focus indicator, per --focus-ring. */
+
+:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+/* ── Reduced motion ───────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* ── Shared loading / empty state utilities ───────────────────────── */

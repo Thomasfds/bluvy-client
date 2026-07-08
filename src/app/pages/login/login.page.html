@@ -15,8 +15,9 @@
 
       <div class="login-page__form">
         <div class="form-field">
-          <label class="form-field__label">{{ 'login.handle.label' | translate }}</label>
+          <label class="form-field__label" for="login-handle">{{ 'login.handle.label' | translate }}</label>
           <input
+            id="login-handle"
             class="form-field__input"
             type="text"
             [placeholder]="'login.handle.placeholder' | translate"

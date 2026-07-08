@@ -172,7 +172,7 @@ ion-content { --padding-top: 0; --padding-start: 0; --padding-end: 0; }
 
 .btn-danger-sm {
   background: var(--color-danger);
-  color: #fff;
+  color: var(--color-on-primary);
   border: none;
   border-radius: var(--radius-full);
   padding: 5px 12px;

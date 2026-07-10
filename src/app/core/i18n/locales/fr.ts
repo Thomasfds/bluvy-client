@@ -154,6 +154,9 @@ export const fr: Record<string, string> = {
   'appearance.light': 'Clair',
   'appearance.dark': 'Sombre',
   'appearance.system': 'Système',
+  'appearance.palette.label': 'Palette de couleurs',
+  'appearance.palette.bluesky': 'Bluesky Officiel',
+  'appearance.palette.mu': 'mu.social',
 
   'security.title': 'Sécurité',
   'security.section.devices': 'Appareils',

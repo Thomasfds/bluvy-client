@@ -67,5 +67,49 @@
         <span class="theme-card__name">{{ 'appearance.system' | translate }}</span>
       </button>
     </div>
+
+    <p class="theme-label theme-label--palette">{{ 'appearance.palette.label' | translate }}</p>
+
+    <!-- Mobile: checkbox list -->
+    <div class="theme-list">
+      <button
+        class="theme-list-item"
+        [class.theme-list-item--active]="palette() === 'bluesky'"
+        (click)="setPalette('bluesky')"
+      >
+        <div class="palette-preview palette-preview--bluesky"></div>
+        <span class="theme-list-item__label">{{ 'appearance.palette.bluesky' | translate }}</span>
+        <ion-icon [name]="palette() === 'bluesky' ? 'checkmark-circle' : 'checkmark-circle-outline'" class="theme-list-item__check"></ion-icon>
+      </button>
+      <button
+        class="theme-list-item"
+        [class.theme-list-item--active]="palette() === 'mu'"
+        (click)="setPalette('mu')"
+      >
+        <div class="palette-preview palette-preview--mu"></div>
+        <span class="theme-list-item__label">{{ 'appearance.palette.mu' | translate }}</span>
+        <ion-icon [name]="palette() === 'mu' ? 'checkmark-circle' : 'checkmark-circle-outline'" class="theme-list-item__check"></ion-icon>
+      </button>
+    </div>
+
+    <!-- Tablet+: card grid -->
+    <div class="theme-grid theme-grid--palette">
+      <button
+        class="theme-card"
+        [class.theme-card--active]="palette() === 'bluesky'"
+        (click)="setPalette('bluesky')"
+      >
+        <div class="palette-preview palette-preview--bluesky"></div>
+        <span class="theme-card__name">{{ 'appearance.palette.bluesky' | translate }}</span>
+      </button>
+      <button
+        class="theme-card"
+        [class.theme-card--active]="palette() === 'mu'"
+        (click)="setPalette('mu')"
+      >
+        <div class="palette-preview palette-preview--mu"></div>
+        <span class="theme-card__name">{{ 'appearance.palette.mu' | translate }}</span>
+      </button>
+    </div>
   </div>
 </ion-content>

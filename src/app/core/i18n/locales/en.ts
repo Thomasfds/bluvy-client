@@ -154,6 +154,9 @@ export const en: Record<string, string> = {
   'appearance.light': 'Light',
   'appearance.dark': 'Dark',
   'appearance.system': 'System',
+  'appearance.palette.label': 'Color palette',
+  'appearance.palette.bluesky': 'Bluesky Official',
+  'appearance.palette.mu': 'mu.social',
 
   'security.title': 'Security',
   'security.section.devices': 'Devices',

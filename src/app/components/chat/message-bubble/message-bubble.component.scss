@@ -21,31 +21,14 @@
   }
 
   &--theirs {
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
+    background: var(--color-bubble-recv);
+    border: 1px solid var(--color-bubble-recv-border);
     color: var(--color-text-primary);
     border-radius: 20px;
     border-bottom-left-radius: 4px;
   }
 
   &--pending { opacity: 0.6; }
-}
-
-@media (prefers-color-scheme: dark) {
-  .bubble--theirs {
-    background: #2C3348;
-    border-color: transparent;
-  }
-}
-
-:host-context(html.theme-dark) .bubble--theirs {
-  background: #2C3348;
-  border-color: transparent;
-}
-
-:host-context(html.theme-light) .bubble--theirs {
-  background: var(--color-surface);
-  border-color: var(--color-border);
 }
 
 .bubble__text {

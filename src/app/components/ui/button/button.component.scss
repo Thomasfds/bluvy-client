@@ -9,11 +9,15 @@
   border-radius: var(--radius-md);
   border: none;
   cursor: pointer;
-  transition: opacity var(--duration-fast), background var(--duration-fast),
-              border-color var(--duration-fast);
+  transition: opacity var(--duration-fast) ease, background var(--duration-fast) ease,
+              border-color var(--duration-fast) ease, transform var(--duration-fast) ease;
   white-space: nowrap;
   text-decoration: none;
   padding: 0 var(--space-4);
+
+  &:active {
+    transform: scale(0.97);
+  }
 
   &:focus-visible {
     outline: none;

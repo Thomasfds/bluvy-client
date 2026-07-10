@@ -68,14 +68,33 @@ ion-content {
   --padding-end: 1rem;
 }
 
-// Class-based dark mode bubble override (ThemeService)
-html.theme-dark app-message-bubble .bubble--theirs {
-  background: #2C3348 !important;
-  border-color: transparent !important;
+ion-card {
+  --background: var(--color-surface);
+  --border-color: var(--color-border);
+  --border-width: 1px;
+  --border-style: solid;
+  border-radius: var(--radius-lg) !important;
+  box-shadow: none !important;
+  margin: var(--space-3) 0 !important;
 }
 
 ion-list {
   background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+  margin-bottom: var(--space-4);
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton-loading {
+  background: linear-gradient(90deg, var(--color-surface) 25%, var(--color-bg) 50%, var(--color-surface) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite linear;
 }
 
 /* ── Base ─────────────────────────────────────────────────────────── */

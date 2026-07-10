@@ -5,9 +5,9 @@ import { EdgeToEdge } from '@capawesome/capacitor-android-edge-to-edge-support';
 export type ThemeMode = 'auto' | 'light' | 'dark';
 export type ThemePalette = 'bluesky' | 'mu';
 
-const SURFACE_LIGHT_BSKY = '#F4F4F6';
-const SURFACE_DARK_BSKY  = '#161E2E';
-const SURFACE_LIGHT_MU   = '#EDEBE5';
+const SURFACE_LIGHT_BSKY = '#FFFFFF';
+const SURFACE_DARK_BSKY  = '#151D28';
+const SURFACE_LIGHT_MU   = '#F7F7F2';
 const SURFACE_DARK_MU    = '#1F1F1F';
 
 @Injectable({ providedIn: 'root' })

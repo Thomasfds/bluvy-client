@@ -259,6 +259,9 @@ export const fr: Record<string, string> = {
   'migrate_sync.done.desc': 'Vous pouvez maintenant créer un PIN pour sécuriser votre synchronisation.',
   'migrate_sync.done.submit': 'Configurer la synchronisation sécurisée',
   'migrate_sync.error.restore': 'Échec de la restauration. Vérifiez votre clé de récupération.',
+  'migrate_sync.error.no_backup': 'Aucune sauvegarde trouvée sur le serveur.',
+  'migrate_sync.error.unsupported_format': 'Format de sauvegarde non pris en charge. Contactez le support.',
+  'migrate_sync.error.invalid_key': 'Format de clé de récupération invalide.',
 
   'pin_unlock.title': 'Entrez votre PIN',
   'pin_unlock.card.title': 'Déverrouillez vos messages',
@@ -315,7 +318,21 @@ export const fr: Record<string, string> = {
   'menu.logout': 'Déconnexion',
 
   'composer.placeholder': 'Message...',
+  'composer.send': 'Envoyer',
   'typing.indicator': "{name} est en train d'écrire…",
+  'unread.count': '{count} messages non lus',
+  'presence.online': 'En ligne',
+  'presence.offline': 'Hors ligne',
+  'connectivity.offline': 'Vous êtes hors ligne — vos messages seront envoyés à la reconnexion.',
+
+  'contact_detail.error_load': 'Impossible de charger les détails du contact.',
+  'contact_detail.error_start_conversation': "Impossible de démarrer la conversation. Réessayez.",
+  'contact_detail.invite_message': "Salut ! J'utilise Bluvy pour la messagerie chiffrée de bout en bout. Rejoins-moi : {url}",
+  'contact_detail.invite_copied': "Texte d'invitation copié ! Ouverture des messages Bluesky...",
+  'contact_detail.link_copied': 'Lien direct copié dans le presse-papiers !',
+  'contact_detail.qr_title': 'Mon QR Code Bluvy',
+  'contact_detail.qr_text': 'Scannez ce code pour démarrer une discussion sécurisée sur Bluvy !',
+  'contact_detail.qr_share_dialog': 'Partager le QR Code',
 
   'common.error.pin_format': 'Le PIN doit contenir entre 4 et 8 chiffres.',
   'common.error.pin_mismatch': 'Les PINs ne correspondent pas.',

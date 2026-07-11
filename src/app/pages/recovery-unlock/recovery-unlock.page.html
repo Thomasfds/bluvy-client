@@ -17,16 +17,21 @@
         <ion-input
           [value]="recoveryInput"
           (ionInput)="onRecoveryInput($event)"
+          [label]="'recovery_unlock.key.placeholder' | translate"
+          label-placement="floating"
           [placeholder]="'recovery_unlock.key.placeholder' | translate"
           type="text"
+          autocomplete="off"
           autocorrect="off"
           autocapitalize="none"
           spellcheck="false"
+          [attr.aria-invalid]="error ? 'true' : null"
+          [attr.aria-describedby]="error ? 'recovery-key-error' : null"
           style="margin: 12px 0;"
         ></ion-input>
 
         @if (error) {
-          <ion-text color="danger"><p>{{ error }}</p></ion-text>
+          <ion-text color="danger"><p id="recovery-key-error" role="alert">{{ error }}</p></ion-text>
         }
 
         <ion-button
@@ -54,25 +59,35 @@
         <ion-input
           [value]="pin"
           (ionInput)="onPinInput($event)"
+          [label]="'recovery_unlock.pin.new' | translate"
+          label-placement="floating"
           [placeholder]="'recovery_unlock.pin.new' | translate"
           type="password"
           inputmode="numeric"
+          autocomplete="new-password"
           maxlength="8"
+          [attr.aria-invalid]="error ? 'true' : null"
+          [attr.aria-describedby]="error ? 'recovery-pin-error' : null"
           style="margin: 12px 0 8px;"
         ></ion-input>
 
         <ion-input
           [value]="pinConfirm"
           (ionInput)="onPinConfirmInput($event)"
+          [label]="'recovery_unlock.pin.confirm' | translate"
+          label-placement="floating"
           [placeholder]="'recovery_unlock.pin.confirm' | translate"
           type="password"
           inputmode="numeric"
+          autocomplete="new-password"
           maxlength="8"
+          [attr.aria-invalid]="error ? 'true' : null"
+          [attr.aria-describedby]="error ? 'recovery-pin-error' : null"
           style="margin-bottom: 12px;"
         ></ion-input>
 
         @if (error) {
-          <ion-text color="danger"><p>{{ error }}</p></ion-text>
+          <ion-text color="danger"><p id="recovery-pin-error" role="alert">{{ error }}</p></ion-text>
         }
 
         <ion-button

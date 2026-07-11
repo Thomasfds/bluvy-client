@@ -10,6 +10,7 @@ import { ConversationsService } from '../../core/conversation/conversations.serv
 import { AuthService } from '../../core/auth/auth.service';
 import { MlsCoordinatorBase } from '../../core/mls/coordinator/mls-coordinator.base';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
+import { TranslationService } from '../../core/i18n/translation.service';
 import { ROUTES } from '../../core/routes';
 import { environment } from '../../../environments/environment';
 import { Capacitor } from '@capacitor/core';
@@ -33,6 +34,7 @@ export class ContactDetailPage {
   private authSvc     = inject(AuthService);
   private coordinator = inject(MlsCoordinatorBase);
   private toastCtrl   = inject(ToastController);
+  private i18n        = inject(TranslationService);
 
   did: string = '';
   contact: Contact | null = null;
@@ -73,7 +75,7 @@ export class ContactDetailPage {
         this.blueskyProfile = result.blueskyContacts.find(c => c.did === this.did) || null;
       }
     } catch {
-      this.error = 'Could not load contact details.';
+      this.error = this.i18n.t('contact_detail.error_load');
     } finally {
       this.loading = false;
     }
@@ -96,7 +98,7 @@ export class ContactDetailPage {
       }
       void this.router.navigate([ROUTES.conversation(conv.id)]);
     } catch {
-      this.error = 'Could not start conversation. Please try again.';
+      this.error = this.i18n.t('contact_detail.error_start_conversation');
     } finally {
       this.openingConv = false;
     }
@@ -124,12 +126,12 @@ export class ContactDetailPage {
   }
 
   async shareViaBlueskyDm(): Promise<void> {
-    const text = `Hey! I use Bluvy for end-to-end encrypted messaging. Join me: ${this.personalInviteUrl}`;
-    
+    const text = this.i18n.t('contact_detail.invite_message', { url: this.personalInviteUrl });
+
     try {
       await navigator.clipboard.writeText(text);
       const toast = await this.toastCtrl.create({
-        message: 'Texte d\'invitation copié ! Ouverture des messages Bluesky...',
+        message: this.i18n.t('contact_detail.invite_copied'),
         duration: 3000,
         position: 'bottom',
         color: 'success'
@@ -143,7 +145,7 @@ export class ContactDetailPage {
     if (Capacitor.isNativePlatform()) {
       await Browser.open({ url: bskyUrl, presentationStyle: 'popover' });
     } else {
-      window.open(bskyUrl, '_blank');
+      window.open(bskyUrl, '_blank', 'noopener,noreferrer');
     }
     this.isInviteModalOpen = false;
   }
@@ -152,7 +154,7 @@ export class ContactDetailPage {
     try {
       await navigator.clipboard.writeText(this.directInviteUrl);
       const toast = await this.toastCtrl.create({
-        message: 'Lien direct copié dans le presse-papiers !',
+        message: this.i18n.t('contact_detail.link_copied'),
         duration: 3000,
         position: 'bottom',
         color: 'success'
@@ -168,19 +170,19 @@ export class ContactDetailPage {
     try {
       if (Capacitor.isNativePlatform()) {
         await Share.share({
-          title: 'Mon QR Code Bluvy',
-          text: 'Scannez ce code pour démarrer une discussion sécurisée sur Bluvy !',
+          title: this.i18n.t('contact_detail.qr_title'),
+          text: this.i18n.t('contact_detail.qr_text'),
           url: this.directInviteUrl,
-          dialogTitle: 'Partager le QR Code'
+          dialogTitle: this.i18n.t('contact_detail.qr_share_dialog')
         });
       } else if (typeof navigator.share === 'function') {
         await navigator.share({
-          title: 'Mon QR Code Bluvy',
-          text: 'Scannez ce code pour démarrer une discussion sécurisée sur Bluvy !',
+          title: this.i18n.t('contact_detail.qr_title'),
+          text: this.i18n.t('contact_detail.qr_text'),
           url: this.directInviteUrl
         });
       } else {
-        window.open(this.qrCodeUrl, '_blank');
+        window.open(this.qrCodeUrl, '_blank', 'noopener,noreferrer');
       }
     } catch {
       // Ignored

@@ -59,13 +59,13 @@
       <div class="section-sep">{{ 'conversations.section.bluvy' | translate }}</div>
       <div class="contact-list">
         @for (c of filteredBluvy; track c.did) {
-          <div class="contact-row" [class.contact-row--selected]="selectedContactDid() === c.did" (click)="openContactConversation(c)">
+          <button type="button" class="contact-row" [class.contact-row--selected]="selectedContactDid() === c.did" (click)="openContactConversation(c)">
             <app-avatar [src]="c.avatarUrl ?? null" [handle]="c.handle" size="md"></app-avatar>
             <div class="contact-info">
               <span class="contact-name">{{ c.displayName || c.handle }}</span>
               <span class="contact-handle">@{{ c.handle }}</span>
             </div>
-          </div>
+          </button>
         }
       </div>
     }
@@ -73,13 +73,13 @@
       <div class="section-sep">{{ 'conversations.section.invite' | translate }}</div>
       <div class="contact-list">
         @for (c of filteredBluesky; track c.did) {
-          <div class="contact-row" [class.contact-row--selected]="selectedContactDid() === c.did" (click)="openContactProfile(c)">
+          <button type="button" class="contact-row" [class.contact-row--selected]="selectedContactDid() === c.did" (click)="openContactProfile(c)">
             <app-avatar [src]="c.avatarUrl ?? null" [handle]="c.handle" size="md"></app-avatar>
             <div class="contact-info">
               <span class="contact-name">{{ c.displayName || c.handle }}</span>
               <span class="contact-handle">@{{ c.handle }}</span>
             </div>
-          </div>
+          </button>
         }
       </div>
     }

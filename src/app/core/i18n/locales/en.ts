@@ -259,6 +259,9 @@ export const en: Record<string, string> = {
   'migrate_sync.done.desc': 'You can now create a PIN to secure your sync going forward.',
   'migrate_sync.done.submit': 'Set up secure sync',
   'migrate_sync.error.restore': 'Restore failed. Check your recovery key.',
+  'migrate_sync.error.no_backup': 'No backup found on server.',
+  'migrate_sync.error.unsupported_format': 'Unsupported backup format. Please contact support.',
+  'migrate_sync.error.invalid_key': 'Invalid recovery key format.',
 
   'pin_unlock.title': 'Enter your PIN',
   'pin_unlock.card.title': 'Unlock your messages',
@@ -315,7 +318,21 @@ export const en: Record<string, string> = {
   'menu.logout': 'Sign out',
 
   'composer.placeholder': 'Message...',
+  'composer.send': 'Send',
   'typing.indicator': '{name} is typing…',
+  'unread.count': '{count} unread messages',
+  'presence.online': 'Online',
+  'presence.offline': 'Offline',
+  'connectivity.offline': "You're offline — messages will be sent once you reconnect.",
+
+  'contact_detail.error_load': 'Could not load contact details.',
+  'contact_detail.error_start_conversation': 'Could not start conversation. Please try again.',
+  'contact_detail.invite_message': 'Hey! I use Bluvy for end-to-end encrypted messaging. Join me: {url}',
+  'contact_detail.invite_copied': 'Invite text copied! Opening Bluesky messages...',
+  'contact_detail.link_copied': 'Direct link copied to clipboard!',
+  'contact_detail.qr_title': 'My Bluvy QR Code',
+  'contact_detail.qr_text': 'Scan this code to start a secure conversation on Bluvy!',
+  'contact_detail.qr_share_dialog': 'Share QR Code',
 
   'common.error.pin_format': 'PIN must be 4 to 8 digits.',
   'common.error.pin_mismatch': 'PINs do not match.',

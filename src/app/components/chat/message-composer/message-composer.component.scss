@@ -31,7 +31,6 @@
 .composer__input {
   flex: 1;
   border: none;
-  outline: none;
   background: var(--color-bg);
   color: var(--color-text-primary);
   font-family: var(--font-sans);
@@ -43,12 +42,17 @@
 
   &::placeholder { color: var(--color-text-secondary); }
   &:disabled { opacity: 0.5; }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+  }
 }
 
 .composer__send {
   flex-shrink: 0;
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   border-radius: var(--radius-full);
   background: var(--color-primary);
   border: none;
@@ -65,5 +69,10 @@
   &:not(:disabled):active {
     opacity: 0.85;
     transform: scale(0.93);
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
   }
 }

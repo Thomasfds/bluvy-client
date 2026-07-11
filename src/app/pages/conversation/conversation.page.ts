@@ -1,5 +1,5 @@
 import {
-  Component, OnInit, OnDestroy, ViewChild, ChangeDetectorRef, inject,
+  Component, OnDestroy, ViewChild, ChangeDetectorRef, inject,
 } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { AsyncPipe } from '@angular/common';
@@ -46,7 +46,7 @@ import { TranslationService } from '../../core/i18n/translation.service';
     TranslatePipe,
   ],
 })
-export class ConversationPage implements OnInit, OnDestroy {
+export class ConversationPage implements OnDestroy {
   @ViewChild(IonContent) private ionContent!: IonContent;
 
   private route           = inject(ActivatedRoute);
@@ -96,7 +96,13 @@ export class ConversationPage implements OnInit, OnDestroy {
   private knownIds          = new Set<string>();
   private ensureGroupAbort: AbortController | null = null;
 
-  async ngOnInit(): Promise<void> {
+  // Ionic keeps this page instance alive in its navigation stack instead of
+  // destroying it on "back" (see stack-controller in @ionic/angular) — so
+  // ngOnInit/ngOnDestroy only fire once, on the very first visit. Socket
+  // subscriptions are therefore opened in ionViewWillEnter and closed in
+  // ionViewWillLeave, so they don't leak (and don't double-fire) across
+  // repeated visits to a cached conversation instance.
+  async ionViewWillEnter(): Promise<void> {
     this.conversationId = this.route.snapshot.paramMap.get('id') ?? '';
     if (!this.conversationId) {
       this.error = 'Invalid conversation.';
@@ -104,6 +110,7 @@ export class ConversationPage implements OnInit, OnDestroy {
     }
     this.typingUsers$ = this.typingSvc.typingUsers$(this.conversationId);
 
+    this.subs = new Subscription();
     this.subscribeToSocket();
 
     this.loading = true;
@@ -140,9 +147,16 @@ export class ConversationPage implements OnInit, OnDestroy {
     }
   }
 
-  ngOnDestroy(): void {
+  ionViewWillLeave(): void {
     this.typingSvc.stopTyping(this.conversationId);
     this.markReadIfVisible();
+    this.subs.unsubscribe();
+  }
+
+  // Defensive: only reached if the page is truly destroyed (e.g. Ionic evicts
+  // it from the stack). ionViewWillLeave already unsubscribes on every visit,
+  // so this is a no-op in the common case.
+  ngOnDestroy(): void {
     this.ensureGroupAbort?.abort();
     this.ensureGroupAbort = null;
     this.subs.unsubscribe();

@@ -37,7 +37,7 @@
       <ion-text color="danger">{{ error }}</ion-text>
     </div>
   } @else {
-    <div class="messages-list">
+    <div class="messages-list" role="log" aria-live="polite" aria-relevant="additions">
       @for (msg of displayMessages; track msg.id; let i = $index) {
         @if (getDateSeparator(i); as label) {
           <div class="date-sep">{{ label }}</div>

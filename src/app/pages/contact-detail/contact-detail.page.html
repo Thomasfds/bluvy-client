@@ -2,7 +2,7 @@
   <button class="ss-back" (click)="goBack()" [attr.aria-label]="'common.back' | translate">
     <ion-icon name="chevron-back-outline"></ion-icon>
   </button>
-  <h1>{{ 'contacts.title' | translate }}</h1>
+  <h1>{{ contact?.displayName || blueskyProfile?.displayName || contact?.handle || blueskyProfile?.handle || ('contacts.title' | translate) }}</h1>
 </div>
 
 <ion-content>
@@ -63,12 +63,18 @@
   </div>
 </ion-content>
 
-<ion-modal [isOpen]="isInviteModalOpen" (didDismiss)="isInviteModalOpen = false" initialBreakpoint="0.75" [breakpoints]="[0, 0.75, 0.95]">
+<ion-modal
+  [isOpen]="isInviteModalOpen"
+  (didDismiss)="isInviteModalOpen = false"
+  initialBreakpoint="0.75"
+  [breakpoints]="[0, 0.75, 0.95]"
+  aria-labelledby="invite-modal-title"
+>
   <ng-template>
     <div class="invite-modal-content">
       <div class="invite-modal-header">
-        <h2>Inviter ce contact</h2>
-        <button class="close-btn" (click)="isInviteModalOpen = false" aria-label="Close">
+        <h2 id="invite-modal-title">Inviter ce contact</h2>
+        <button class="close-btn" (click)="isInviteModalOpen = false" [attr.aria-label]="'common.close' | translate">
           <ion-icon name="close"></ion-icon>
         </button>
       </div>

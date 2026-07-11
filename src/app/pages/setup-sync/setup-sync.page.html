@@ -17,25 +17,35 @@
         <ion-input
           [value]="pin"
           (ionInput)="onPinInput($event)"
+          [label]="'setup_sync.pin.placeholder' | translate"
+          label-placement="floating"
           [placeholder]="'setup_sync.pin.placeholder' | translate"
           type="password"
           inputmode="numeric"
+          autocomplete="new-password"
           maxlength="8"
+          [attr.aria-invalid]="error ? 'true' : null"
+          [attr.aria-describedby]="error ? 'setup-pin-error' : null"
           style="margin: 12px 0 8px;"
         ></ion-input>
 
         <ion-input
           [value]="pinConfirm"
           (ionInput)="onPinConfirmInput($event)"
+          [label]="'setup_sync.pin.confirm' | translate"
+          label-placement="floating"
           [placeholder]="'setup_sync.pin.confirm' | translate"
           type="password"
           inputmode="numeric"
+          autocomplete="new-password"
           maxlength="8"
+          [attr.aria-invalid]="error ? 'true' : null"
+          [attr.aria-describedby]="error ? 'setup-pin-error' : null"
           style="margin-bottom: 12px;"
         ></ion-input>
 
         @if (error) {
-          <ion-text color="danger"><p>{{ error }}</p></ion-text>
+          <ion-text color="danger"><p id="setup-pin-error" role="alert">{{ error }}</p></ion-text>
         }
 
         <ion-button

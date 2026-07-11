@@ -4,7 +4,7 @@
     <aside class="sidebar">
 
       <!-- Profile -->
-      <div class="sidebar-profile" (click)="navigate(routes.menu)">
+      <button type="button" class="sidebar-profile" (click)="navigate(routes.menu)">
         <app-avatar
           [src]="auth.currentUser()?.avatarUrl ?? null"
           [handle]="auth.currentUser()?.handle || ''"
@@ -16,7 +16,7 @@
           </span>
           <span class="sidebar-profile__handle">&#64;{{ auth.currentUser()?.handle }}</span>
         </div>
-      </div>
+      </button>
 
       <!-- Main nav -->
       <nav class="sidebar-nav">

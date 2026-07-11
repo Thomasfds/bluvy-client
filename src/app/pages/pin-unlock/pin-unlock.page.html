@@ -17,15 +17,20 @@
         <ion-input
           [value]="pin"
           (ionInput)="onPinInput($event)"
+          [label]="'pin_unlock.placeholder' | translate"
+          label-placement="floating"
           [placeholder]="'pin_unlock.placeholder' | translate"
           type="password"
           inputmode="numeric"
+          autocomplete="current-password"
           maxlength="8"
+          [attr.aria-invalid]="error ? 'true' : null"
+          [attr.aria-describedby]="error ? 'pin-unlock-error' : null"
           style="margin: 12px 0;"
         ></ion-input>
 
         @if (error) {
-          <ion-text color="danger"><p>{{ error }}</p></ion-text>
+          <ion-text color="danger"><p id="pin-unlock-error" role="alert">{{ error }}</p></ion-text>
         }
 
         <ion-button

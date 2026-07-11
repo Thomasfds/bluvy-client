@@ -20,6 +20,7 @@ import { ContactsService } from '../../../core/contact/contacts.service';
 import type { Contact, BlueskyProfile } from '../../../core/contact/contact.types';
 import { MlsCoordinatorBase } from '../../../core/mls/coordinator/mls-coordinator.base';
 import { TranslatePipe } from '../../../core/i18n/translate.pipe';
+import { TranslationService } from '../../../core/i18n/translation.service';
 import { ROUTES } from '../../../core/routes';
 import { environment } from '../../../../environments/environment';
 
@@ -50,6 +51,7 @@ export class SidebarListComponent implements OnInit, OnDestroy {
   readonly bpSvc       = inject(BreakpointService);
   private contactsSvc  = inject(ContactsService);
   private coordinator  = inject(MlsCoordinatorBase);
+  private i18n         = inject(TranslationService);
 
   conversations: ConversationListItem[] = [];
   loading = false;
@@ -227,15 +229,16 @@ export class SidebarListComponent implements OnInit, OnDestroy {
 
   formatTime(ts: number | null): string {
     if (!ts) return '';
-    const d   = new Date(ts);
-    const now = new Date();
+    const d      = new Date(ts);
+    const now    = new Date();
+    const locale = this.i18n.locale === 'fr' ? 'fr-FR' : 'en-US';
     if (d.toDateString() === now.toDateString()) {
-      return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      return d.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
     }
     if (now.getTime() - d.getTime() < 7 * 24 * 60 * 60 * 1000) {
-      return d.toLocaleDateString([], { weekday: 'short' });
+      return d.toLocaleDateString(locale, { weekday: 'short' });
     }
-    return d.toLocaleDateString([], { day: 'numeric', month: 'short' });
+    return d.toLocaleDateString(locale, { day: 'numeric', month: 'short' });
   }
 
   private setupSocketSubs(): void {

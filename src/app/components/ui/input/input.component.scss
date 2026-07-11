@@ -23,11 +23,11 @@
     border-color: var(--color-border);
   }
 
-  &:focus {
+  &:focus-visible {
     outline: none;
     background: var(--color-interactive-focus-bg);
     border-color: var(--color-primary);
-    box-shadow: none;
+    box-shadow: var(--focus-ring);
   }
 
   &:disabled {

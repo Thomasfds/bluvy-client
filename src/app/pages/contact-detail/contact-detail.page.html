@@ -128,14 +128,16 @@
           <div class="profile-card-section">
             <h3 class="profile-section-title">{{ 'contact_detail.actions' | translate }}</h3>
             <div class="profile-actions-row">
-              <button class="profile-action-btn" [disabled]="!conversationId" (click)="toggleMute()">
-                <div class="profile-action-btn__icon-wrapper">
-                  <ion-icon [name]="isMuted() ? 'volume-high-outline' : 'volume-mute-outline'"></ion-icon>
-                </div>
-                <span class="profile-action-btn__label">
-                  {{ (isMuted() ? 'contact_detail.action.unmute' : 'contact_detail.action.mute') | translate }}
-                </span>
-              </button>
+              @if (environment.features.muteConversation) {
+                <button class="profile-action-btn" [disabled]="!conversationId" (click)="toggleMute()">
+                  <div class="profile-action-btn__icon-wrapper">
+                    <ion-icon [name]="isMuted() ? 'volume-high-outline' : 'volume-mute-outline'"></ion-icon>
+                  </div>
+                  <span class="profile-action-btn__label">
+                    {{ (isMuted() ? 'contact_detail.action.unmute' : 'contact_detail.action.mute') | translate }}
+                  </span>
+                </button>
+              }
 
               <button class="profile-action-btn profile-action-btn--danger" [disabled]="!conversationId" (click)="clearLocalHistoryPrompt()">
                 <div class="profile-action-btn__icon-wrapper">
@@ -146,14 +148,16 @@
                 </span>
               </button>
 
-              <button class="profile-action-btn profile-action-btn--danger" (click)="blockContact()">
-                <div class="profile-action-btn__icon-wrapper">
-                  <ion-icon name="ban-outline"></ion-icon>
-                </div>
-                <span class="profile-action-btn__label">
-                  {{ (isBlocked() ? 'contact_detail.action.unblock' : 'contact_detail.action.block') | translate }}
-                </span>
-              </button>
+              @if (environment.features.blockUser) {
+                <button class="profile-action-btn profile-action-btn--danger" (click)="blockContact()">
+                  <div class="profile-action-btn__icon-wrapper">
+                    <ion-icon name="ban-outline"></ion-icon>
+                  </div>
+                  <span class="profile-action-btn__label">
+                    {{ (isBlocked() ? 'contact_detail.action.unblock' : 'contact_detail.action.block') | translate }}
+                  </span>
+                </button>
+              }
             </div>
           </div>
         }

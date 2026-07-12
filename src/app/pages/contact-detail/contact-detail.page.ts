@@ -42,6 +42,8 @@ export class ContactDetailPage {
   private toastCtrl       = inject(ToastController);
   private i18n            = inject(TranslationService);
 
+  protected readonly environment = environment;
+
   did: string = '';
   contact: Contact | null = null;
   blueskyProfile: BlueskyProfile | null = null;

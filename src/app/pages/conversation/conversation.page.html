@@ -120,10 +120,12 @@
         <ion-icon name="person-outline" class="popover-item__icon"></ion-icon>
         <span class="popover-item__label">{{ 'conversation.action.profile' | translate }}</span>
       </button>
-      <button class="popover-item" (click)="toggleMute()">
-        <ion-icon [name]="isMuted() ? 'volume-high-outline' : 'volume-mute-outline'" class="popover-item__icon"></ion-icon>
-        <span class="popover-item__label">{{ (isMuted() ? 'conversation.action.unmute' : 'conversation.action.mute') | translate }}</span>
-      </button>
+      @if (environment.features.muteConversation) {
+        <button class="popover-item" (click)="toggleMute()">
+          <ion-icon [name]="isMuted() ? 'volume-high-outline' : 'volume-mute-outline'" class="popover-item__icon"></ion-icon>
+          <span class="popover-item__label">{{ (isMuted() ? 'conversation.action.unmute' : 'conversation.action.mute') | translate }}</span>
+        </button>
+      }
       @if (conversation?.archived) {
         <button class="popover-item" (click)="toggleArchive()">
           <ion-icon name="folder-open-outline" class="popover-item__icon"></ion-icon>
@@ -139,10 +141,12 @@
         <ion-icon name="trash-outline" class="popover-item__icon"></ion-icon>
         <span class="popover-item__label">{{ 'conversation.action.clear_history' | translate }}</span>
       </button>
-      <button class="popover-item popover-item--danger" (click)="deleteConversationPrompt()">
-        <ion-icon name="ban-outline" class="popover-item__icon"></ion-icon>
-        <span class="popover-item__label">{{ 'conversation.action.delete' | translate }}</span>
-      </button>
+      @if (environment.features.deleteConversation) {
+        <button class="popover-item popover-item--danger" (click)="deleteConversationPrompt()">
+          <ion-icon name="ban-outline" class="popover-item__icon"></ion-icon>
+          <span class="popover-item__label">{{ 'conversation.action.delete' | translate }}</span>
+        </button>
+      }
     </div>
   </ng-template>
 </ion-popover>

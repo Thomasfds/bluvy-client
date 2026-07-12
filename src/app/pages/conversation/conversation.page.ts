@@ -53,6 +53,8 @@ export class ConversationPage implements OnDestroy {
   @ViewChild(IonContent) private ionContent!: IonContent;
   @ViewChild('optionsPopover') optionsPopover!: IonPopover;
 
+  protected readonly environment = environment;
+
   private route           = inject(ActivatedRoute);
   private router          = inject(Router);
   private authSvc         = inject(AuthService);

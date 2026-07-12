@@ -249,7 +249,6 @@ export class AuthService {
 
     if (userDid) {
       await this.secureStorage.clearMbk(userDid).catch(() => {});
-      await this.deviceSvc.clear(userDid).catch(() => {});
     }
     await this.msgCache.clearAll().catch(() => {});
     await this.mlsStateStorage.clearAll().catch(() => {});

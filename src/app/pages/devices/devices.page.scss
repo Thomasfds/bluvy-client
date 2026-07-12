@@ -217,6 +217,12 @@ ion-content {
 
 // ── Misc ──────────────────────────────────────────────────────────────────────
 
+.devices-revoke-all {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--space-3);
+}
+
 .devices-hint {
   display: flex;
   align-items: flex-start;

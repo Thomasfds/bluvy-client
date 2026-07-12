@@ -89,9 +89,11 @@
       border-color: var(--color-border);
     }
 
-    &:focus {
+    &:focus-visible {
+      outline: none;
       background: var(--color-interactive-focus-bg);
       border-color: var(--color-primary);
+      box-shadow: var(--focus-ring);
     }
   }
 
@@ -234,10 +236,19 @@
   font-family: var(--font-sans);
   font-size: var(--text-xs);
   color: var(--color-text-secondary);
+  background: none;
+  border: none;
+  padding: 0;
   cursor: pointer;
   text-decoration: none;
   opacity: 0.7;
   &:hover { opacity: 1; color: var(--color-primary); }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+    border-radius: 4px;
+  }
 }
 
 .login-legal-sep {

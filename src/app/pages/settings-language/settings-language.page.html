@@ -9,9 +9,11 @@
   <div class="ss-content">
     <p class="lang-label">{{ 'settings.language.label' | translate }}</p>
 
-    <div class="theme-segments">
+    <div class="theme-segments" role="radiogroup">
       <button
         class="segment-btn"
+        role="radio"
+        [attr.aria-checked]="i18n.locale === 'fr'"
         [class.segment-btn--active]="i18n.locale === 'fr'"
         (click)="setLocale('fr')"
       >
@@ -19,6 +21,8 @@
       </button>
       <button
         class="segment-btn"
+        role="radio"
+        [attr.aria-checked]="i18n.locale === 'en'"
         [class.segment-btn--active]="i18n.locale === 'en'"
         (click)="setLocale('en')"
       >

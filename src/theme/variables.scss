@@ -4,13 +4,16 @@
   --color-surface:        #FFFFFF;
   --color-text-primary:   #111827;
   --color-text-secondary: #6B7280;
-  --color-primary:        #0A7CFF;
-  --color-primary-hover:  #006AE6;
-  --color-primary-active: #0057BE;
+  // Darkened from the original #0A7CFF so that white button/badge text
+  // reaches WCAG AA (4.5:1) — the original was ~3.9:1. See docs/design/ACCESSIBILITY.md.
+  --color-primary:        #006AE6;
+  --color-primary-hover:  #0057BE;
+  --color-primary-active: #00459A;
   --color-border:         #E5E7EB;
   --color-success:        #22C55E;
   --color-warning:        #F59E0B;
-  --color-danger:         #EF4444;
+  // Darkened from #EF4444 (~3.8:1) to reach 4.5:1 with white text.
+  --color-danger:         #DC2626;
   --color-bubble-recv:    var(--color-surface);
   --color-bubble-recv-border: var(--color-border);
 
@@ -91,9 +94,10 @@ html.md.plt-hybrid {
 html.palette-bluesky {
   --color-bg:             #FFFFFF; // Unified white background
   --color-surface:        #FFFFFF; // Unified white surface
-  --color-primary:        #0085ff; // Vibrant Bluesky Blue
-  --color-primary-hover:  #0059D6;
-  --color-primary-active: #0048AD;
+  // Darkened from #0085ff (~3.6:1 with white text) to reach 4.5:1 AA.
+  --color-primary:        #0059D6; // Vibrant Bluesky Blue (AA-adjusted)
+  --color-primary-hover:  #0048AD;
+  --color-primary-active: #003785;
   --color-border:         #DCE2EA;
   --color-text-primary:   #0B0F19;
   --color-text-secondary: #667B99;
@@ -125,9 +129,10 @@ html.palette-bluesky.theme-dark {
 html.palette-mu {
   --color-bg:             #F7F7F2; // Unified warm off-white background
   --color-surface:        #F7F7F2; // Unified warm off-white surface
-  --color-primary:        #DB4AA6; // Eurosky Pink Accent
-  --color-primary-hover:  #C04293;
-  --color-primary-active: #A73981;
+  // Darkened from #DB4AA6 (~3.8:1 with white text) to reach 4.5:1 AA.
+  --color-primary:        #C04293; // Eurosky Pink Accent (AA-adjusted)
+  --color-primary-hover:  #A73981;
+  --color-primary-active: #8C2F6A;
   --color-border:         #E0DED9;
   --color-text-primary:   #212121;
   --color-text-secondary: #797876;
@@ -195,15 +200,17 @@ html.theme-dark-black {
   &.palette-bluesky {
     --color-bg:             #000000;
     --color-surface:        #000000;
-    --color-border:         #1C2533;
+    // Lightened from #1C2533 (~1.4:1 on black) to reach the 3:1 minimum for UI components.
+    --color-border:         #505E78;
     --color-bubble-recv:    #19222E;
     --color-search-bg:      #19222E;
   }
-  
+
   &.palette-mu {
     --color-bg:             #000000;
     --color-surface:        #000000;
-    --color-border:         #242424;
+    // Lightened from #242424 (~1.4:1 on black) to reach the 3:1 minimum for UI components.
+    --color-border:         #5C5C5C;
     --color-bubble-recv:    #1F1F1F;
     --color-search-bg:      #1F1F1F;
   }

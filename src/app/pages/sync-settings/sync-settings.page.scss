@@ -36,9 +36,12 @@ ion-content {
   border: none;
   cursor: pointer;
   padding: var(--space-1);
+  min-width: 44px;
+  min-height: 44px;
   color: var(--color-text-secondary);
   display: flex;
   align-items: center;
+  justify-content: center;
   border-radius: var(--radius-full);
   flex-shrink: 0;
 
@@ -131,18 +134,19 @@ ion-content {
   font-size: var(--text-base);
   background: var(--color-search-bg);
   color: var(--color-text-primary);
-  outline: none;
   transition: border-color var(--duration-fast) ease, background var(--duration-fast) ease;
 
   &::placeholder { color: var(--color-text-secondary); }
-  
+
   &:hover {
     border-color: var(--color-border);
   }
 
-  &:focus {
+  &:focus-visible {
+    outline: none;
     background: var(--color-interactive-focus-bg);
     border-color: var(--color-primary);
+    box-shadow: var(--focus-ring);
   }
 }
 

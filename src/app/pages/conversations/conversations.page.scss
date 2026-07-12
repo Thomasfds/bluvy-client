@@ -140,13 +140,18 @@ ion-content {
   &__input {
     flex: 1;
     border: none;
-    outline: none;
     background: transparent;
     font-family: var(--font-sans);
     font-size: var(--text-sm);
     color: var(--color-text-primary);
 
     &::placeholder { color: var(--color-text-secondary); }
+
+    &:focus-visible {
+      outline: none;
+      box-shadow: var(--focus-ring);
+      border-radius: var(--radius-sm);
+    }
   }
 }
 

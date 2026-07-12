@@ -2,7 +2,10 @@
   <div class="bubble"
        [class.bubble--mine]="isMine"
        [class.bubble--theirs]="!isMine"
-       [class.bubble--pending]="pending">
+       [class.bubble--pending]="pending"
+       [class.bubble--first]="position === 'first'"
+       [class.bubble--middle]="position === 'middle'"
+       [class.bubble--last]="position === 'last'">
     <p class="bubble__text">{{ text }}</p>
     <div class="bubble__footer">
       <span class="bubble__time">{{ timestamp | date:'HH:mm' }}</span>

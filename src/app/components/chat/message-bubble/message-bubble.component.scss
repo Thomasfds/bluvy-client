@@ -16,14 +16,20 @@
   &--mine {
     background: var(--color-primary);
     color: #fff;
-    border-radius: 18px;
+    border-radius: 18px 18px 4px 18px;
+    &.bubble--first { border-radius: 18px 18px 4px 18px; }
+    &.bubble--middle { border-radius: 18px 4px 4px 18px; }
+    &.bubble--last { border-radius: 18px 4px 18px 18px; }
   }
 
   &--theirs {
     background: var(--color-bubble-recv);
     border: 1px solid var(--color-bubble-recv-border);
     color: var(--color-text-primary);
-    border-radius: 18px;
+    border-radius: 18px 18px 18px 4px;
+    &.bubble--first { border-radius: 18px 18px 18px 4px; }
+    &.bubble--middle { border-radius: 4px 18px 18px 4px; }
+    &.bubble--last { border-radius: 4px 18px 18px 18px; }
   }
 
   &--pending { opacity: 0.6; }

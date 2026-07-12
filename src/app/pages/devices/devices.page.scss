@@ -35,9 +35,12 @@ ion-content {
   border: none;
   cursor: pointer;
   padding: var(--space-1);
+  min-width: 44px;
+  min-height: 44px;
   color: var(--color-text-secondary);
   display: flex;
   align-items: center;
+  justify-content: center;
   border-radius: var(--radius-full);
   flex-shrink: 0;
 
@@ -189,6 +192,7 @@ ion-content {
   align-items: center;
   justify-content: center;
   min-width: 44px;
+  min-height: 44px;
 
   &:disabled { opacity: 0.5; cursor: default; }
   &:not(:disabled):active { opacity: 0.8; }
@@ -203,6 +207,10 @@ ion-content {
   color: var(--color-text-secondary);
   cursor: pointer;
   border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
 
   &:active { background: var(--color-interactive-hover); }
 }

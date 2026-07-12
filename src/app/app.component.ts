@@ -2,6 +2,8 @@ import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { environment } from '../environments/environment';
 import { IonApp, IonRouterOutlet } from '@ionic/angular/standalone';
+import { ConnectivityService } from './core/infrastructure/connectivity.service';
+import { TranslatePipe } from './core/i18n/translate.pipe';
 import { App } from '@capacitor/app';
 import { addIcons } from 'ionicons';
 import {
@@ -21,6 +23,8 @@ import {
   // language + beta + appearance
   globe, globeOutline, flaskOutline,
   colorPaletteOutline, colorFilterOutline, radioButtonOffOutline,
+  ellipsisVerticalOutline, volumeMuteOutline, volumeHighOutline, banOutline,
+  archiveOutline, folderOpenOutline,
 } from 'ionicons/icons';
 import { AuthService } from './core/auth/auth.service';
 import { SocketService } from './core/infrastructure/socket.service';
@@ -34,7 +38,8 @@ import { JournalService } from './core/journal/journal.service';
 @Component({
   selector: 'app-root',
   templateUrl: 'app.component.html',
-  imports: [IonApp, IonRouterOutlet],
+  styleUrl: 'app.component.scss',
+  imports: [IonApp, IonRouterOutlet, TranslatePipe],
 })
 export class AppComponent implements OnInit, OnDestroy {
   private authSvc      = inject(AuthService);
@@ -42,6 +47,7 @@ export class AppComponent implements OnInit, OnDestroy {
   private provisionSvc = inject(DeviceProvisioningService);
   private kpSvc        = inject(KeyPackageService);
   private coordinator  = inject(MlsCoordinatorBase);
+  readonly connectivitySvc = inject(ConnectivityService);
 
   constructor() {
     inject(ThemeService);
@@ -61,6 +67,8 @@ export class AppComponent implements OnInit, OnDestroy {
       globe, globeOutline, flaskOutline,
       colorPaletteOutline, colorFilterOutline, radioButtonOffOutline,
       chatbubbleEllipsesOutline, openOutline, reorderThreeOutline, copyOutline,
+      ellipsisVerticalOutline, volumeMuteOutline, volumeHighOutline, banOutline,
+      archiveOutline, folderOpenOutline,
     });
   }
 

@@ -69,6 +69,11 @@ export const routes: Routes = [
           import('../pages/about/about.page').then(m => m.AboutPage),
       },
       {
+        path: 'profile',
+        loadComponent: () =>
+          import('../pages/profile/profile.page').then(m => m.ProfilePage),
+      },
+      {
         path: 'about/log',
         loadComponent: () =>
           import('../pages/settings-logs/settings-logs.page').then(m => m.SettingsLogsPage),

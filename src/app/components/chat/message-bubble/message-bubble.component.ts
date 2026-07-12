@@ -15,5 +15,6 @@ export class MessageBubbleComponent {
   @Input() isMine = false;
   @Input() timestamp = 0;
   @Input() pending = false;
+  @Input() position: 'first' | 'middle' | 'last' | 'single' = 'single';
   @Input() receiptStatus: 'read' | 'delivered' | 'sent' | null = null;
 }

@@ -1,19 +1,33 @@
-@if (bpSvc.isTablet()) {
-  <div class="t-list-header">
-    <span class="t-list-title">
-      {{ (activeTab === 'conversations' ? 'tabs.conversations' : 'tabs.contacts') | translate }}
-    </span>
+@if (viewingArchived && bpSvc.isTablet()) {
+  <div class="archives-header">
+    <button class="archives-back" (click)="closeArchives()" [attr.aria-label]="'common.back' | translate">
+      <ion-icon name="chevron-back-outline"></ion-icon>
+    </button>
+    <span class="archives-title">{{ 'conversations.archives' | translate }}</span>
+  </div>
+} @else {
+  @if (bpSvc.isTablet()) {
+    <div class="t-list-header">
+      <span class="t-list-title">
+        {{ (activeTab === 'conversations' ? 'tabs.conversations' : 'tabs.contacts') | translate }}
+      </span>
+      @if (activeTab === 'conversations') {
+        <button class="header-archive-btn" (click)="openArchives()" [attr.aria-label]="'conversations.archives' | translate">
+          <ion-icon name="archive-outline"></ion-icon>
+        </button>
+      }
+    </div>
+  }
+
+  <div class="search-zone">
+    <ion-icon name="search-outline" class="search-zone__icon"></ion-icon>
+    @if (activeTab === 'conversations') {
+      <input class="search-zone__input" [placeholder]="'common.search' | translate" readonly />
+    } @else {
+      <input class="search-zone__input" [placeholder]="'common.search' | translate" (input)="onContactSearch($event)" />
+    }
   </div>
 }
-
-<div class="search-zone">
-  <ion-icon name="search-outline" class="search-zone__icon"></ion-icon>
-  @if (activeTab === 'conversations') {
-    <input class="search-zone__input" [placeholder]="'common.search' | translate" readonly />
-  } @else {
-    <input class="search-zone__input" [placeholder]="'common.search' | translate" (input)="onContactSearch($event)" />
-  }
-</div>
 
 <div class="t-list-body">
   @if (activeTab === 'conversations') {
@@ -34,6 +48,7 @@
     }
     @if (!loading && conversations.length > 0) {
       <div class="conv-list">
+
         @for (conv of conversations; track conv.id) {
           <app-conversation-item
             [avatarSrc]="conv.participant.avatarUrl ?? null"

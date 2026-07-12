@@ -14,14 +14,14 @@ describe('MlsCoordinatorService', () => {
   let mockPendingRepo: jasmine.SpyObj<PendingDecryptRepository>;
   let mockWatchdog: jasmine.SpyObj<MlsWatchdogService>;
 
-  const mockUser: UserProfile = { did: 'did:plc:alice', handle: 'alice.test', email: 'alice@test.com' };
-  const mockDevice: DeviceInfo = { id: 'device-1', name: 'Web Client', createdAt: Date.now() };
+  const mockUser: UserProfile = { did: 'did:plc:alice', handle: 'alice.test', displayName: 'Alice', avatarUrl: null };
+  const mockDevice: DeviceInfo = { id: 'device-1', name: 'Web Client', platform: 'web' };
 
   beforeEach(() => {
     mockMlsSvc = jasmine.createSpyObj<MlsService>('MlsService', ['decryptMessage']);
-    mockMessageCacheSvc = jasmine.createSpyObj<MessageCacheService>('MessageCacheService', ['store', 'get']);
+    mockMessageCacheSvc = jasmine.createSpyObj<MessageCacheService>('MessageCacheService', ['store']);
     mockPendingRepo = jasmine.createSpyObj<PendingDecryptRepository>('PendingDecryptRepository', ['enqueue', 'remove', 'markAttempt']);
-    mockWatchdog = jasmine.createSpyObj<MlsWatchdogService>('MlsWatchdogService', ['registerActiveConversation']);
+    mockWatchdog = jasmine.createSpyObj<MlsWatchdogService>('MlsWatchdogService', ['watch', 'unwatch']);
 
     TestBed.configureTestingModule({
       providers: [

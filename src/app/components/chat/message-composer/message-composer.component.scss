@@ -51,8 +51,8 @@
 
 .composer__send {
   flex-shrink: 0;
-  width: 44px;
-  height: 44px;
+  width: 38px;
+  height: 38px;
   border-radius: var(--radius-full);
   background: var(--color-primary);
   border: none;
@@ -61,11 +61,16 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: opacity var(--duration-fast), transform var(--duration-fast);
+  transition: background var(--duration-fast), color var(--duration-fast), opacity var(--duration-fast), transform var(--duration-fast);
 
   ion-icon { font-size: 18px; }
 
-  &:disabled { opacity: 0.35; cursor: default; }
+  &:disabled {
+    background: transparent;
+    color: var(--color-text-secondary);
+    opacity: 0.4;
+    cursor: default;
+  }
   &:not(:disabled):active {
     opacity: 0.85;
     transform: scale(0.93);

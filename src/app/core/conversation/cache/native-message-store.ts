@@ -178,6 +178,13 @@ export class NativeMessageStore implements IMessageStore {
     await this.db!.execute('DELETE FROM message_cache', false);
   }
 
+  async clearConversation(conversationId: string): Promise<void> {
+    await this.db!.run(
+      'DELETE FROM message_cache WHERE conversation_id = ?',
+      [conversationId],
+    );
+  }
+
   // ── Private ────────────────────────────────────────────────────────────────
 
   private toValues(r: EncryptedCacheRecord): unknown[] {

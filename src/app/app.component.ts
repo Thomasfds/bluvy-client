@@ -23,6 +23,8 @@ import {
   // language + beta + appearance
   globe, globeOutline, flaskOutline,
   colorPaletteOutline, colorFilterOutline, radioButtonOffOutline,
+  ellipsisVerticalOutline, volumeMuteOutline, volumeHighOutline, banOutline,
+  archiveOutline, folderOpenOutline,
 } from 'ionicons/icons';
 import { AuthService } from './core/auth/auth.service';
 import { SocketService } from './core/infrastructure/socket.service';
@@ -65,6 +67,8 @@ export class AppComponent implements OnInit, OnDestroy {
       globe, globeOutline, flaskOutline,
       colorPaletteOutline, colorFilterOutline, radioButtonOffOutline,
       chatbubbleEllipsesOutline, openOutline, reorderThreeOutline, copyOutline,
+      ellipsisVerticalOutline, volumeMuteOutline, volumeHighOutline, banOutline,
+      archiveOutline, folderOpenOutline,
     });
   }
 

@@ -56,6 +56,7 @@ export class SidebarListComponent implements OnInit, OnDestroy {
   conversations: ConversationListItem[] = [];
   loading = false;
   error   = '';
+  viewingArchived = false;
 
   activeTab: 'conversations' | 'contacts' = 'conversations';
 
@@ -112,6 +113,20 @@ export class SidebarListComponent implements OnInit, OnDestroy {
 
   async ngOnInit(): Promise<void> {
     this.setupSocketSubs();
+    this.subs.add(
+      this.convSvc.conversationDeleted$.subscribe(deletedId => {
+        this.conversations = this.conversations.filter(c => c.id !== deletedId);
+      })
+    );
+    this.subs.add(
+      this.convSvc.conversationArchived$.subscribe(event => {
+        if (event.archived) {
+          this.conversations = this.conversations.filter(c => c.id !== event.id);
+        } else {
+          void this.load();
+        }
+      })
+    );
     this.periodicTimer = setInterval(() => void this.load(), SYNC_INTERVAL_MS);
     await this.load();
   }
@@ -126,7 +141,7 @@ export class SidebarListComponent implements OnInit, OnDestroy {
     this.loading = true;
     this.error   = '';
     try {
-      const page = await firstValueFrom(this.convSvc.getConversations(undefined, 50));
+      const page = await firstValueFrom(this.convSvc.getConversations(undefined, 50, this.viewingArchived));
       this.conversations = page.data;
 
       const counts: Record<string, number> = {};
@@ -164,6 +179,16 @@ export class SidebarListComponent implements OnInit, OnDestroy {
 
   openMenu(): void {
     void this.router.navigate([ROUTES.menu]);
+  }
+
+  openArchives(): void {
+    this.viewingArchived = true;
+    void this.load();
+  }
+
+  closeArchives(): void {
+    this.viewingArchived = false;
+    void this.load();
   }
 
   async loadContacts(): Promise<void> {

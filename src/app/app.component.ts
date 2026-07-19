@@ -34,6 +34,8 @@ import { MlsCoordinatorBase } from './core/mls/coordinator/mls-coordinator.base'
 import { ThemeService } from './core/theme/theme.service';
 import { NavigationRedirectService } from './core/auth/navigation-redirect.service';
 import { JournalService } from './core/journal/journal.service';
+import { NotificationService } from './core/notification/notification.service';
+import { PushNotificationService } from './core/notification/push-notification.service';
 
 @Component({
   selector: 'app-root',
@@ -47,6 +49,8 @@ export class AppComponent implements OnInit, OnDestroy {
   private provisionSvc = inject(DeviceProvisioningService);
   private kpSvc        = inject(KeyPackageService);
   private coordinator  = inject(MlsCoordinatorBase);
+  private notificationSvc = inject(NotificationService);
+  private pushNotificationSvc = inject(PushNotificationService);
   readonly connectivitySvc = inject(ConnectivityService);
 
   constructor() {
@@ -75,6 +79,9 @@ export class AppComponent implements OnInit, OnDestroy {
   private subs = new Subscription();
 
   ngOnInit(): void {
+    this.notificationSvc.initialize();
+    this.pushNotificationSvc.initialize();
+
     this.subs.add(
       this.socketSvc.deviceNew$.subscribe(payload => {
         const user   = this.authSvc.currentUser();

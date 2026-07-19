@@ -201,4 +201,60 @@ ion-checkbox {
   }
 }
 
+// ── Custom Notification Toast ──────────────────────────────────────────────
+
+.custom-notification-toast {
+  --background: var(--color-surface);
+  --border-color: var(--color-border);
+  --border-style: solid;
+  --border-width: 1px;
+  --button-color: var(--color-primary);
+  --color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+
+  &::part(button) {
+    font-weight: var(--weight-bold);
+    text-transform: uppercase;
+    font-size: var(--text-xs);
+  }
+}
+
+.notification-toast {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+
+  &__avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-full);
+    object-fit: cover;
+    border: 1px solid var(--color-border);
+  }
+
+  &__content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  &__title {
+    font-weight: var(--weight-semibold);
+    font-size: var(--text-base);
+    color: var(--color-text-primary);
+  }
+
+  &__text {
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+  }
+}
+
 

@@ -7,6 +7,8 @@ export const fr: Record<string, string> = {
   'common.continue': 'Continuer',
   'common.loading': 'Chargement...',
   'common.search': 'Rechercher',
+  'notifications.new_message': 'Nouveau message',
+  'notifications.open': 'Ouvrir',
 
   'landing.title': 'Bluvy Messenger',
   'landing.tagline1': 'La messagerie privée construite sur Bluesky.',

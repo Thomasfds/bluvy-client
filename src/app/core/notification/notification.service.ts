@@ -1,0 +1,156 @@
+import { Injectable, inject, signal } from '@angular/core';
+import { Router, NavigationEnd } from '@angular/router';
+import { ToastController } from '@ionic/angular/standalone';
+import { filter, firstValueFrom } from 'rxjs';
+import { SocketService, MessageNewPayload } from '../infrastructure/socket.service';
+import { AuthService } from '../auth/auth.service';
+import { ConversationsService } from '../conversation/conversations.service';
+import { ContactsService } from '../contact/contacts.service';
+import { MessageCacheService, CachedMessage } from '../conversation/message-cache.service';
+import { MlsCoordinatorBase } from '../mls/coordinator/mls-coordinator.base';
+import { TranslationService } from '../i18n/translation.service';
+import { ROUTES } from '../routes';
+
+@Injectable({ providedIn: 'root' })
+export class NotificationService {
+  private readonly socketSvc       = inject(SocketService);
+  private readonly authSvc         = inject(AuthService);
+  private readonly conversationsSvc = inject(ConversationsService);
+  private readonly contactsSvc      = inject(ContactsService);
+  private readonly cacheSvc         = inject(MessageCacheService);
+  private readonly coordinator      = inject(MlsCoordinatorBase);
+  private readonly router           = inject(Router);
+  private readonly toastCtrl         = inject(ToastController);
+  private readonly translationSvc   = inject(TranslationService);
+
+  private readonly activeConversationId = signal<string | null>(null);
+
+  initialize(): void {
+    // 1. Track active conversation from route
+    this.router.events.pipe(
+      filter(e => e instanceof NavigationEnd)
+    ).subscribe(() => {
+      const match = this.router.url.match(/\/conversations\/([a-zA-Z0-9-]+)/);
+      this.activeConversationId.set(match ? match[1]! : null);
+    });
+
+    // 2. Listen to incoming messages
+    this.socketSvc.messageNew$.subscribe(async (msg) => {
+      await this.handleIncomingMessage(msg);
+    });
+  }
+
+  private async handleIncomingMessage(msg: MessageNewPayload): Promise<void> {
+    const user = this.authSvc.currentUser();
+    const device = this.authSvc.currentDevice();
+    if (!user || !device) return;
+
+    // Do not notify for our own messages
+    if (msg.senderDid === user.did) return;
+
+    // Decrypt the message in the background first so that:
+    // a) It's added to the cache (this automatically updates UI previews in sidebar-list)
+    // b) We can display the decrypted content in the notification toast
+    let decryptedText = this.translationSvc.t('notifications.new_message');
+    try {
+      const result = await this.coordinator.decryptMessage(
+        msg.conversationId,
+        msg.id,
+        msg.senderDid,
+        msg.senderDeviceId,
+        false, // isMine
+        msg.createdAt,
+        msg.ciphertext,
+        user,
+        device
+      );
+
+      if (result.state === 'plaintext') {
+        decryptedText = result.plaintext;
+        // Store in cache if not already stored
+        if (this.cacheSvc.isInitialized()) {
+          const cached: CachedMessage = {
+            id: msg.id,
+            conversationId: msg.conversationId,
+            senderDeviceId: msg.senderDeviceId,
+            senderDid: msg.senderDid,
+            plaintext: result.plaintext,
+            isMine: false,
+            undecryptable: false,
+            cacheVersion: 1,
+            encryptionVersion: 1,
+            deletedAt: null,
+            createdAt: msg.createdAt,
+            cachedAt: Date.now(),
+          };
+          await this.cacheSvc.store(cached);
+        }
+      }
+    } catch (err) {
+      // If decryption fails, we still proceed with displaying a generic notification
+    }
+
+    // Only display in-app toast if the user is NOT actively looking at this conversation
+    if (this.activeConversationId() !== msg.conversationId) {
+      await this.showInAppToast(msg, decryptedText);
+    }
+  }
+
+  private async showInAppToast(msg: MessageNewPayload, text: string): Promise<void> {
+    // Resolve sender profile details
+    let displayName = msg.senderDid.substring(0, 12);
+    let avatarUrl = 'assets/default-avatar.png';
+
+    const currentUser = this.authSvc.currentUser();
+    if (currentUser) {
+      const contacts = this.contactsSvc.getCached(currentUser.did);
+      if (contacts) {
+        const contact = contacts.bluvyContacts.find(c => c.did === msg.senderDid);
+        if (contact) {
+          displayName = contact.displayName || contact.handle;
+          avatarUrl = contact.avatarUrl || avatarUrl;
+        }
+      }
+    }
+
+    // If still not resolved from contact cache, query the conversation object
+    if (displayName === msg.senderDid.substring(0, 12)) {
+      try {
+        const conv = await firstValueFrom(this.conversationsSvc.getConversationById(msg.conversationId));
+        if (conv && conv.participant && conv.participant.did === msg.senderDid) {
+          displayName = conv.participant.displayName || conv.participant.handle;
+          avatarUrl = conv.participant.avatarUrl || avatarUrl;
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    // HTML-like custom toast utilizing CSS variables
+    const toast = await this.toastCtrl.create({
+      message: `
+        <div class="notification-toast">
+          <img class="notification-toast__avatar" src="${avatarUrl}" onerror="this.src='assets/default-avatar.png'" />
+          <div class="notification-toast__content">
+            <div class="notification-toast__title">${displayName}</div>
+            <div class="notification-toast__text">${text}</div>
+          </div>
+        </div>
+      `,
+      duration: 4000,
+      position: 'top',
+      cssClass: 'custom-notification-toast',
+      buttons: [
+        {
+          text: this.translationSvc.t('notifications.open'),
+          role: 'cancel',
+          handler: () => {
+            void this.router.navigate([ROUTES.conversation(msg.conversationId)]);
+          }
+        }
+      ]
+    });
+
+    await toast.present();
+  }
+}

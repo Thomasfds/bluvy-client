@@ -8,8 +8,10 @@ export type PendingWelcomesResponse = {
   data: Array<{ id: string; conversationId: string | null; welcome: string; createdAt: number }>;
 };
 
+export type MlsCommitItem = { id: string; conversationId: string; senderDeviceId: string; commit: string; epoch: number; createdAt: number };
+
 export type MissedCommitsResponse = {
-  data: Array<{ id: string; conversationId: string; senderDeviceId: string; commit: string; epoch: number; createdAt: number }>;
+  data: MlsCommitItem[];
 };
 
 export type MlsMyDevicesResponse = {
@@ -48,19 +50,26 @@ export function validatePendingWelcomesResponse(data: PendingWelcomesResponse): 
   return data;
 }
 
+function validateMlsCommitItem(item: unknown, label: string): MlsCommitItem {
+  if (!isObject(item)) throw new Error(`${label}: expected object`);
+  if (typeof item['id'] !== 'string') throw new Error(`${label}.id: expected string`);
+  if (typeof item['conversationId'] !== 'string') throw new Error(`${label}.conversationId: expected string`);
+  if (typeof item['senderDeviceId'] !== 'string') throw new Error(`${label}.senderDeviceId: expected string`);
+  if (typeof item['commit'] !== 'string') throw new Error(`${label}.commit: expected string`);
+  if (typeof item['epoch'] !== 'number') throw new Error(`${label}.epoch: expected number`);
+  if (typeof item['createdAt'] !== 'number') throw new Error(`${label}.createdAt: expected number`);
+  return item as MlsCommitItem;
+}
+
 export function validateMissedCommitsResponse(data: MissedCommitsResponse): MissedCommitsResponse {
   if (!isObject(data)) throw new Error('MissedCommitsResponse: expected object');
   if (!Array.isArray(data['data'])) throw new Error('MissedCommitsResponse.data: expected array');
-  for (const item of data['data']) {
-    if (!isObject(item)) throw new Error('MissedCommitsResponse.data[]: expected object');
-    if (typeof item['id'] !== 'string') throw new Error('MissedCommitsResponse.data[].id: expected string');
-    if (typeof item['conversationId'] !== 'string') throw new Error('MissedCommitsResponse.data[].conversationId: expected string');
-    if (typeof item['senderDeviceId'] !== 'string') throw new Error('MissedCommitsResponse.data[].senderDeviceId: expected string');
-    if (typeof item['commit'] !== 'string') throw new Error('MissedCommitsResponse.data[].commit: expected string');
-    if (typeof item['epoch'] !== 'number') throw new Error('MissedCommitsResponse.data[].epoch: expected number');
-    if (typeof item['createdAt'] !== 'number') throw new Error('MissedCommitsResponse.data[].createdAt: expected number');
-  }
+  data['data'].forEach((item, i) => validateMlsCommitItem(item, `MissedCommitsResponse.data[${i}]`));
   return data;
+}
+
+export function validatePostCommitResponse(data: unknown): MlsCommitItem {
+  return validateMlsCommitItem(data, 'PostCommitResponse');
 }
 
 export function validateKeyPackagesForParticipantResponse(data: Paginated<UploadedKeyPackage>): Paginated<UploadedKeyPackage> {

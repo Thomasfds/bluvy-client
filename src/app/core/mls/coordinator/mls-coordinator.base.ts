@@ -10,6 +10,7 @@ import type {
   ConversationReadyEvent,
   WelcomeProcessedEvent,
   CommitAppliedEvent,
+  ConversationFailedEvent,
   PendingDecryptQueuedEvent,
   RestoreCompletedEvent,
 } from './mls-coordinator.events';
@@ -126,6 +127,7 @@ export abstract class MlsCoordinatorBase {
   abstract readonly conversationReady$:      Observable<ConversationReadyEvent>;
   abstract readonly welcomeProcessed$:       Observable<WelcomeProcessedEvent>;
   abstract readonly commitApplied$:          Observable<CommitAppliedEvent>;
+  abstract readonly conversationFailed$:     Observable<ConversationFailedEvent>;
   abstract readonly pendingDecryptQueued$:   Observable<PendingDecryptQueuedEvent>;
   abstract readonly pendingDecryptReplayed$: Observable<ReplayedDecryptEvent>;
   abstract readonly restoreCompleted$:       Observable<RestoreCompletedEvent>;

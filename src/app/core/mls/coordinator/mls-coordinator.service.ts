@@ -23,6 +23,7 @@ import {
   type ConversationReadyEvent,
   type WelcomeProcessedEvent,
   type CommitAppliedEvent,
+  type ConversationFailedEvent,
   type PendingDecryptQueuedEvent,
   type RestoreCompletedEvent,
 } from './mls-coordinator.events';
@@ -77,10 +78,17 @@ export class MlsCoordinatorService extends MlsCoordinatorBase {
   // Auto-recovery state for FAILED conversations (backoff: 5s, 15s, 45s).
   private readonly failedRecovery = new Map<string, { attempts: number; timerId: ReturnType<typeof setTimeout> | undefined }>();
 
+  // Consecutive processIncomingCommit failures per conversation, e.g. a commit
+  // race fork (see provisionDevice) that leaves this device permanently unable
+  // to verify the group's real commit chain. Reset to 0 on any successful apply.
+  private readonly commitFailureCounts = new Map<string, number>();
+  private static readonly MAX_COMMIT_FAILURES = 3;
+
   // ── Private Subjects ───────────────────────────────────────────────────────
   private readonly _conversationReady$$    = new Subject<ConversationReadyEvent>();
   private readonly _welcomeProcessed$$     = new Subject<WelcomeProcessedEvent>();
   private readonly _commitApplied$$        = new Subject<CommitAppliedEvent>();
+  private readonly _conversationFailed$$   = new Subject<ConversationFailedEvent>();
   private readonly _pendingDecryptQueued$$ = new Subject<PendingDecryptQueuedEvent>();
   private readonly _pendingDecryptReplayed$$ = new Subject<ReplayedDecryptEvent>();
   private readonly _restoreCompleted$$     = new Subject<RestoreCompletedEvent>();
@@ -89,6 +97,7 @@ export class MlsCoordinatorService extends MlsCoordinatorBase {
   override readonly conversationReady$      = this._conversationReady$$.asObservable();
   override readonly welcomeProcessed$       = this._welcomeProcessed$$.asObservable();
   override readonly commitApplied$          = this._commitApplied$$.asObservable();
+  override readonly conversationFailed$     = this._conversationFailed$$.asObservable();
   override readonly pendingDecryptQueued$   = this._pendingDecryptQueued$$.asObservable();
   override readonly pendingDecryptReplayed$ = this._pendingDecryptReplayed$$.asObservable();
   override readonly restoreCompleted$       = this._restoreCompleted$$.asObservable();
@@ -149,9 +158,16 @@ export class MlsCoordinatorService extends MlsCoordinatorBase {
       try {
         await this.mlsSvc.processWelcomeForConversation(welcomeId, welcomeBase64, convId, user, device);
       } catch (err) {
-        if (!environment.production) console.warn('[MLS:coordinator] processWelcome on READY state (idempotent):', err);
+        console.warn('[MLS:coordinator] processWelcome on READY state (idempotent):', err);
       }
       return;
+    }
+
+    // FAILED only allows FAILED -> EMPTY (see MlsStateTransitionGuard) — reset
+    // here so a conversation marked FAILED (e.g. a permanent commit-race fork)
+    // doesn't make the transition to JOINING below throw.
+    if (currentState === ConversationMlsState.Failed) {
+      this.transitionState(convId, ConversationMlsState.Empty);
     }
 
     // Register the barrier BEFORE the first await so concurrent decryptMessage()
@@ -204,6 +220,15 @@ export class MlsCoordinatorService extends MlsCoordinatorBase {
     assertMls(!!convId,         'ensureGroupReady: convId required');
 
     if (this.isConversationReady(convId)) return;
+
+    // FAILED only allows FAILED -> EMPTY (see MlsStateTransitionGuard). Reset here
+    // so a conversation marked FAILED by trackCommitOutcome (e.g. a permanent
+    // commit-race fork) doesn't make the next transition to INITIALIZING below
+    // throw — that would otherwise hard-block sending a message on this
+    // conversation forever instead of at least attempting to proceed.
+    if (this.states.get(convId) === ConversationMlsState.Failed) {
+      this.transitionState(convId, ConversationMlsState.Empty);
+    }
 
     const { release } = this.barrier.register(convId);
 
@@ -300,7 +325,7 @@ export class MlsCoordinatorService extends MlsCoordinatorBase {
         return { messageId, conversationId: convId, state: 'plaintext' as const, plaintext, operationId };
       } catch (err) {
         const classified = this.classifyError(err, convId);
-        if (!environment.production) console.error('[MLS:coordinator] decryptMessage error for', messageId, '->', classified.kind, ':', err);
+        console.error('[MLS:coordinator] decryptMessage error for', messageId, '->', classified.kind, ':', err);
 
         if (classified instanceof TransientMlsError) {
           await this.pendingRepo.enqueue({
@@ -354,10 +379,50 @@ export class MlsCoordinatorService extends MlsCoordinatorBase {
     assertMls(epoch >= 0,     'processIncomingCommit: epoch must be >= 0', { convId, epoch });
 
     const operationId = crypto.randomUUID();
-    return this.mlsSvc.processIncomingCommit(convId, commitBase64, epoch, user, device)
-      .then(() => {
-        this._commitApplied$$.next({ conversationId: convId, epoch, operationId });
-      });
+    return this.trackCommitOutcome(
+      convId, user, device,
+      () => this.mlsSvc.processIncomingCommit(convId, commitBase64, epoch, user, device),
+    ).then(() => {
+      this._commitApplied$$.next({ conversationId: convId, epoch, operationId });
+    });
+  }
+
+  // Wraps a commit-applying operation (a single incoming commit, or a whole
+  // catch-up batch) with the Ready ⇄ ApplyingCommit/Failed state machine and a
+  // consecutive-failure counter. After MAX_COMMIT_FAILURES in a row for the
+  // same conversation, marks it FAILED and hands off to the existing
+  // scheduleFailedRecovery/recoverFromFailed machinery instead of failing
+  // silently forever (e.g. a commit race fork — see provisionDevice).
+  private async trackCommitOutcome(
+    convId: string,
+    user:   UserProfile,
+    device: DeviceInfo,
+    op:     () => Promise<void>,
+  ): Promise<void> {
+    const wasReady = (await this.getOrDeriveState(convId, user, device)) === ConversationMlsState.Ready;
+    if (wasReady) this.transitionState(convId, ConversationMlsState.ApplyingCommit);
+
+    try {
+      await op();
+      this.commitFailureCounts.delete(convId);
+      if (wasReady) this.transitionState(convId, ConversationMlsState.Ready);
+    } catch (err) {
+      if (!wasReady) throw err;
+      const failures = (this.commitFailureCounts.get(convId) ?? 0) + 1;
+      this.commitFailureCounts.set(convId, failures);
+      if (failures >= MlsCoordinatorService.MAX_COMMIT_FAILURES) {
+        console.error(
+          '[MLS:coordinator]', failures, 'consecutive commit failures for', convId,
+          '— likely a permanent fork (see provisionDevice commit race). Marking FAILED.',
+        );
+        this.transitionState(convId, ConversationMlsState.Failed);
+        this._conversationFailed$$.next({ conversationId: convId });
+        this.scheduleFailedRecovery(convId, user, device);
+      } else {
+        this.transitionState(convId, ConversationMlsState.Ready);
+      }
+      throw err;
+    }
   }
 
   override async catchUpMissedCommits(
@@ -365,7 +430,10 @@ export class MlsCoordinatorService extends MlsCoordinatorBase {
     user:   UserProfile,
     device: DeviceInfo,
   ): Promise<void> {
-    return this.mlsSvc.catchUpMissedCommits(convId, user, device);
+    return this.trackCommitOutcome(
+      convId, user, device,
+      () => this.mlsSvc.catchUpMissedCommits(convId, user, device),
+    );
   }
 
   // ── Provisioning ──────────────────────────────────────────────────────────
@@ -524,8 +592,12 @@ export class MlsCoordinatorService extends MlsCoordinatorBase {
         return;
       }
       // No pending Welcome available — leave EMPTY, do not retry.
+      // Since recovery failed and there are no Welcomes, the local state is permanently
+      // forked/broken. Clear the local group state to allow re-initialization.
+      if (!environment.production) console.warn('[MLS:coordinator] recoverFromFailed: no pending welcome found, clearing local group state to trigger reset', convId);
+      await this.mlsSvc.clearConversationGroup(convId, user, device);
     } catch (err) {
-      if (!environment.production) console.warn('[MLS:coordinator] recoverFromFailed attempt', attempts, 'for', convId, ':', err);
+      console.warn('[MLS:coordinator] recoverFromFailed attempt', attempts, 'for', convId, ':', err);
       this.transitionState(convId, ConversationMlsState.Failed);
       this.scheduleFailedRecovery(convId, user, device);
     }
@@ -586,7 +658,7 @@ export class MlsCoordinatorService extends MlsCoordinatorBase {
       if (pattern.test(msg)) return new PermanentMlsError(kind as never, msg, convId);
     }
 
-    if (!environment.production) console.error('[MLS:coordinator] Unrecognized ts-mls error, classifying as PermanentMlsError:', err);
+    console.error('[MLS:coordinator] Unrecognized ts-mls error, classifying as PermanentMlsError:', err);
     return new PermanentMlsError('InvalidCiphertext', msg, convId);
   }
 

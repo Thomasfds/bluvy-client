@@ -153,6 +153,7 @@ export class MlsService {
       const POLLS_PER_ROUND = 3;
       const POLL_DELAY_MS   = 2000;
       let currentRole: 'initiator' | 'joiner' | 'already_initialized' = role;
+      let round = 0;
 
       while (true) {
         if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
@@ -171,6 +172,23 @@ export class MlsService {
           if (joined) return;
         }
 
+        round++;
+        if (round >= 2) {
+          // Deadlock escape: we are stuck waiting for a Welcome.
+          // Force a group reset on the backend by ACKing all pending welcomes,
+          // clearing local group state, and retrying ensureGroup.
+          if (!environment.production) console.warn('[MLS] ensureGroupReady: stuck waiting for Welcome, forcing group reset for', conversationId);
+          try {
+            const welcomes = await this.mlsRepo.getPendingWelcomes(conversationId);
+            for (const item of welcomes.data) {
+              await this.mlsRepo.ackWelcome(item.id).catch(() => {});
+            }
+            await this.clearConversationGroup(conversationId, user, device);
+          } catch (err) {
+            console.error('[MLS] ensureGroupReady: failed during deadlock escape', err);
+          }
+        }
+
         const refreshed = await this.mlsRepo.ensureGroup(conversationId);
         currentRole = refreshed.role;
         if (currentRole === 'initiator') break;
@@ -182,7 +200,7 @@ export class MlsService {
       const joined = await this.fetchAndProcessPendingWelcome(conversationId, user, device);
       if (joined) return;
     } catch (err) {
-      if (!environment.production) console.warn('[MLS] ensureGroupReady: initiator pre-check failed, proceeding to group creation:', err);
+      console.warn('[MLS] ensureGroupReady: initiator pre-check failed, proceeding to group creation:', err);
     }
 
     // Final pre-read to get credentialIdentity and confirm group is still absent.
@@ -251,7 +269,7 @@ export class MlsService {
         conversationId,
       );
     } else {
-      if (!environment.production) console.warn('[MLS] ensureGroupReady: createCommit returned no welcome for', conversationId);
+      console.warn('[MLS] ensureGroupReady: createCommit returned no welcome for', conversationId);
     }
 
     // ── Atomic state write ────────────────────────────────────────────────────
@@ -277,7 +295,7 @@ export class MlsService {
     }
 
     void this.provisionAllOtherDevices(conversationId, user, device)
-      .catch(err => { if (!environment.production) console.warn('[MLS] ensureGroupReady: provisionAllOtherDevices failed', err); });
+      .catch(err => { console.warn('[MLS] ensureGroupReady: provisionAllOtherDevices failed', err); });
   }
 
   // Encrypts a plaintext string for the given conversation.
@@ -389,7 +407,7 @@ export class MlsService {
         await this.processWelcomeForConversation(item.id, item.welcome, conversationId, user, device);
         processed = true;
       } catch (err) {
-        if (!environment.production) console.warn('[MLS] fetchAndProcessPendingWelcome: failed to process Welcome', item.id, ':', err);
+        console.warn('[MLS] fetchAndProcessPendingWelcome: failed to process Welcome', item.id, ':', err);
       }
     }
     return processed;
@@ -498,23 +516,23 @@ export class MlsService {
         joinedGroupState = groupState;
         break;
       } catch (err) {
-        if (!environment.production) console.warn('[MLS] joinGroup failed for KP index', kpIndex, ':', err);
+        console.warn('[MLS] joinGroup failed for KP index', kpIndex, ':', err);
       }
       kpIndex++;
     }
 
     if (matchedKpB64 === null || joinedGroupState === null) {
+      console.error(`[MLS:audit] ========================`);
+      console.error(`[MLS:audit] AUCUN KEYPACKAGE NE CORRESPOND`);
+      console.error(`[MLS:audit] Welcome refs (${_welcomeRefs.length}): ${_welcomeRefs.join(' | ')}`);
+      console.error(`[MLS:audit] Tried ${preState.keyPackages.length} local KPs — see trace:8 above`);
+      console.error(`[MLS:audit] ========================`);
       if (!environment.production) {
-        console.error(`[MLS:audit] ========================`);
-        console.error(`[MLS:audit] AUCUN KEYPACKAGE NE CORRESPOND`);
-        console.error(`[MLS:audit] Welcome refs (${_welcomeRefs.length}): ${_welcomeRefs.join(' | ')}`);
-        console.error(`[MLS:audit] Tried ${preState.keyPackages.length} local KPs — see trace:8 above`);
-        console.error(`[MLS:audit] ========================`);
         console.log(`[MLS:trace:8] FINAL  Welcome expected refs: ${_welcomeRefs.join(' | ')}`);
         console.log(`[MLS:trace:8] FINAL  No local KP matched. All tried refs above.`);
       }
       if (welcomeId) {
-        if (!environment.production) console.warn('[MLS] processWelcomeForConversation: no matching KP for Welcome', welcomeId, '— ACKing stale');
+        console.warn('[MLS] processWelcomeForConversation: no matching KP for Welcome', welcomeId, '— ACKing stale');
         this.ackWelcome(welcomeId);
       }
       throw new Error(`No matching key package found for Welcome (tried ${preState.keyPackages.length})`);
@@ -567,7 +585,7 @@ export class MlsService {
         if (attempt < 2) {
           await new Promise<void>(r => setTimeout(r, 2000 * (attempt + 1)));
         } else {
-          if (!environment.production) console.warn('[MLS] ACK permanently failed for Welcome', welcomeId, 'after 3 attempts:', err);
+          console.warn('[MLS] ACK permanently failed for Welcome', welcomeId, 'after 3 attempts:', err);
         }
       }
     }
@@ -676,7 +694,7 @@ export class MlsService {
       consumed = await this.mlsRepo.consumeOwnKeyPackage(newDeviceId);
     } catch (err) {
       if (err instanceof HttpErrorResponse && (err.error as { code?: string })?.code === 'NO_KEY_PACKAGES') {
-        if (!environment.production) console.warn('[MLS] provisionDevice: no key packages for', newDeviceId, '— cannot provision conv', conversationId);
+        console.warn('[MLS] provisionDevice: no key packages for', newDeviceId, '— cannot provision conv', conversationId);
       }
       throw err;
     }
@@ -752,10 +770,34 @@ export class MlsService {
 
     if (shouldSkip) return;
 
-    // Network: post Welcome and Commit (after the storage lock).
-    await this.mlsRepo.postWelcome(newDeviceId, welcomeB64, conversationId);
+    // Network: post Welcome and Commit atomically (after the storage lock).
+    const stored = await this.mlsRepo.postCommit(conversationId, commitB64, newEpoch, {
+      targetDeviceId: newDeviceId,
+      welcome: welcomeB64,
+    });
 
-    await this.mlsRepo.postCommit(conversationId, commitB64, newEpoch);
+    // The backend enforces UNIQUE(conversationId, epoch) and is idempotent on
+    // conflict: if another device (e.g. another of our own devices reacting
+    // to the same device:new event) posted a commit for this epoch first,
+    // `stored` is THEIR commit, not ours, even though the request returned
+    // 200. Applying our own optimistic local state in that case would fork
+    // this device onto a group state nobody else recognizes. Detect it and
+    // resync onto the winning commit instead of forking.
+    if (stored.senderDeviceId !== device.id) {
+      console.warn(
+        '[MLS] provisionDevice: lost commit race for epoch', newEpoch, 'on conv', conversationId,
+        '— rolling back optimistic state and applying the winning commit from', stored.senderDeviceId,
+      );
+      await this.storage.update<StoredMlsState>(scope, async (s) => {
+        if (!s) return null;
+        if (previousStateB64pd === undefined) delete s.groupStates[conversationId];
+        else s.groupStates[conversationId] = previousStateB64pd;
+        s.updatedAt = Date.now();
+        return s;
+      });
+      await this.processIncomingCommit(conversationId, stored.commit, stored.epoch, user, device);
+      return;
+    }
 
     if (newStateB64pd !== previousStateB64pd) {
       this.backupSvcRef?.backupGroupState(conversationId, newStateB64pd);
@@ -774,7 +816,7 @@ export class MlsService {
       const resp = await this.mlsRepo.getMyDevices();
       otherDevices = resp.data.filter(d => d.id !== device.id);
     } catch (err) {
-      if (!environment.production) console.warn('[MLS] provisionAllOtherDevices: failed to get device list', err);
+      console.warn('[MLS] provisionAllOtherDevices: failed to get device list', err);
       return;
     }
 
@@ -782,7 +824,7 @@ export class MlsService {
       try {
         await this.provisionDevice(otherDevice.id, conversationId, user, device);
       } catch (err) {
-        if (!environment.production) console.warn('[MLS] provisionAllOtherDevices: failed to provision', otherDevice.id, 'for', conversationId, ':', err);
+        console.warn('[MLS] provisionAllOtherDevices: failed to provision', otherDevice.id, 'for', conversationId, ':', err);
       }
     }
   }
@@ -822,7 +864,7 @@ export class MlsService {
     // Store a safe (non-rejecting) version in the chain so that a bad commit
     // does not block all subsequent commits for this conversation.
     const safeNext = next.catch(err => {
-      if (!environment.production) console.error('[MLS] processIncomingCommit: epoch', epoch, 'failed for', conversationId, ':', err);
+      console.error('[MLS] processIncomingCommit: epoch', epoch, 'failed for', conversationId, ':', err);
     }) as Promise<void>;
 
     this.pendingCommits.set(conversationId, safeNext);
@@ -851,7 +893,7 @@ export class MlsService {
     const commitBytes = this.base64ToBytes(commitBase64);
     const decoded     = decodeMlsMessage(commitBytes, 0)?.[0];
     if (!decoded || decoded.wireformat !== 'mls_public_message') {
-      if (!environment.production) console.error('[MLS] processIncomingCommit: unexpected wireformat for conv', conversationId);
+      console.error('[MLS] processIncomingCommit: unexpected wireformat for conv', conversationId);
       return;
     }
 
@@ -883,8 +925,8 @@ export class MlsService {
         if (!environment.production) console.log('[MLS] processIncomingCommit: applied epoch', epoch, 'for conv', conversationId);
         return state;
       } catch (err) {
-        if (!environment.production) console.error('[MLS] processIncomingCommit: failed to apply epoch', epoch, 'for conv', conversationId, ':', err);
-        return null;
+        console.error('[MLS] processIncomingCommit: failed to apply epoch', epoch, 'for conv', conversationId, ':', err);
+        throw err;
       }
     });
 

@@ -111,7 +111,8 @@ export class ContactDetailPage {
       const user = this.authSvc.currentUser();
       const device = this.authSvc.currentDevice();
       if (user && device) {
-        void this.coordinator.prepareConversation(user, device, this.contact.did).catch(() => undefined);
+        void this.coordinator.prepareConversation(user, device, this.contact.did)
+          .catch(err => console.warn('[ContactDetail] prepareConversation (pre-warm) failed:', err));
       }
       void this.router.navigate([ROUTES.conversation(conv.id)]);
     } catch {

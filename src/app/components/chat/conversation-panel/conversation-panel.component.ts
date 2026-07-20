@@ -254,7 +254,6 @@ export class ConversationPanelComponent implements OnInit, OnDestroy, OnChanges 
   }
 
   private async loadHistory(): Promise<void> {
-    this.mlsGroupReady = true;
     const user   = this.authSvc.currentUser();
     const device = this.authSvc.currentDevice();
     if (!user || !device) return;
@@ -375,6 +374,7 @@ export class ConversationPanelComponent implements OnInit, OnDestroy, OnChanges 
         try {
           await this.coordinator.processWelcome(payload.id, payload.welcome, this.conversationId, user, device);
           if (this.syncSvc.isMbkAvailable()) await this.syncSvc.restore();
+          this.mlsGroupReady = true;
           await this.loadHistory();
         } catch (err) { if (!environment.production) console.error('[MLS] processWelcome failed:', err); }
       }),
@@ -387,6 +387,14 @@ export class ConversationPanelComponent implements OnInit, OnDestroy, OnChanges 
         if (!user || !device) return;
         void this.coordinator.catchUpMissedCommits(this.conversationId, user, device)
           .catch(err => { if (!environment.production) console.warn('[MLS] catchUpMissedCommits on reconnect failed:', err); });
+      }),
+    );
+
+    this.subs.add(
+      this.coordinator.conversationFailed$.subscribe(event => {
+        if (event.conversationId !== this.conversationId) return;
+        this.mlsGroupReady = false;
+        this.cdr.detectChanges();
       }),
     );
   }

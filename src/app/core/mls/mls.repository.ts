@@ -9,10 +9,12 @@ import {
   validateMissedCommitsResponse,
   validateMlsMyDevicesResponse,
   validatePendingWelcomesResponse,
+  validatePostCommitResponse,
 } from './mls.validator';
 import type {
   EnsureGroupResponse,
   MissedCommitsResponse,
+  MlsCommitItem,
   MlsMyDevicesResponse,
   PendingWelcomesResponse,
 } from './mls.validator';
@@ -76,11 +78,17 @@ export class MlsRepository {
     return validateKeyPackagesForParticipantResponse(raw);
   }
 
-  postCommit(conversationId: string, commit: string, epoch: number): Promise<unknown> {
-    return this.apiClient.post(
+  async postCommit(
+    conversationId: string,
+    commit: string,
+    epoch: number,
+    welcome?: { targetDeviceId: string; welcome: string },
+  ): Promise<MlsCommitItem> {
+    const raw = await this.apiClient.post(
       `/v1/conversations/${encodeURIComponent(conversationId)}/mls-commit`,
-      { commit, epoch },
+      { commit, epoch, welcome },
     );
+    return validatePostCommitResponse(raw);
   }
 
   async getMyDevices(): Promise<MlsMyDevicesResponse> {

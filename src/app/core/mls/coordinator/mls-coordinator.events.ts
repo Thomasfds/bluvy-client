@@ -19,6 +19,14 @@ export interface CommitAppliedEvent {
   readonly operationId:    string;
 }
 
+// Emitted when a conversation transitions to FAILED after MAX_COMMIT_FAILURES
+// consecutive commit-application failures (e.g. a commit race fork — see
+// provisionDevice). Consumed by conversation pages to surface the existing
+// "reestablish encryption" button.
+export interface ConversationFailedEvent {
+  readonly conversationId: string;
+}
+
 export interface PendingDecryptQueuedEvent {
   readonly conversationId: string;
   readonly messageId:      string;

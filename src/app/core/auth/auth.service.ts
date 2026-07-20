@@ -247,6 +247,11 @@ export class AuthService {
     this.isAuthenticated.set(true);
     sessionStorage.removeItem('add_account_mode');
 
+    // Re-trigger push token registration so this newly added/logged-in account
+    // gets its own push-token row immediately, instead of waiting for the next
+    // cold start or a manual switch away and back.
+    void this.pushSvc.onAccountSwitch();
+
     try {
       await this.retryMlsBootstrap('login: initializeForSession', () =>
         this.coordinator.initializeForSession(response.user, sessionDevice));

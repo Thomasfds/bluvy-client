@@ -33,7 +33,7 @@ class GlobalErrorHandler implements ErrorHandler {
   private readonly toastCtrl = inject(ToastController);
 
   handleError(error: unknown): void {
-    if (!environment.production) console.error('[GlobalError]', error);
+    console.error('[GlobalError]', error);
     void this.toastCtrl.create({
       message:  'An unexpected error occurred.',
       duration: 3000,

@@ -117,6 +117,11 @@ export class ConversationPage implements OnDestroy {
     }
     this.typingUsers$ = this.typingSvc.typingUsers$(this.conversationId);
 
+    // Reset for the (possibly different) conversation this page instance is now
+    // showing — before the MLS catch-up calls below, so a FAILED detected during
+    // THIS visit isn't immediately clobbered back to true by loadHistory().
+    this.mlsGroupReady = true;
+
     this.subs = new Subscription();
     this.subscribeToSocket();
 
@@ -276,7 +281,6 @@ export class ConversationPage implements OnDestroy {
   // ── Private ───────────────────────────────────────────────────────────────
 
   private async loadHistory(): Promise<void> {
-    this.mlsGroupReady = true;
     const user   = this.authSvc.currentUser();
     const device = this.authSvc.currentDevice();
     if (!user || !device) return;
@@ -664,6 +668,7 @@ export class ConversationPage implements OnDestroy {
           }
           // Pending messages were replayed by coordinator.processWelcome() and display
           // was updated via pendingDecryptReplayed$. Load history to fill any server gaps.
+          this.mlsGroupReady = true;
           await this.loadHistory();
         } catch (err) {
           if (!environment.production) console.error('[MLS] processWelcome failed:', err);
@@ -678,6 +683,14 @@ export class ConversationPage implements OnDestroy {
         if (!user || !device) return;
         void this.coordinator.catchUpMissedCommits(this.conversationId, user, device)
           .catch(err => { if (!environment.production) console.warn('[MLS] catchUpMissedCommits on reconnect failed:', err); });
+      }),
+    );
+
+    this.subs.add(
+      this.coordinator.conversationFailed$.subscribe(event => {
+        if (event.conversationId !== this.conversationId) return;
+        this.mlsGroupReady = false;
+        this.cdr.detectChanges();
       }),
     );
   }

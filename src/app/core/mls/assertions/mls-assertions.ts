@@ -23,8 +23,8 @@ export function assertMls(
   context:   Record<string, unknown> = {},
 ): void {
   if (!condition) {
+    console.error('[MLS:assertion] FAILED:', message, context);
     if (!environment.production) {
-      console.error('[MLS:assertion] FAILED:', message, context);
       throw new MlsAssertionError(message, context, true);
     }
   }

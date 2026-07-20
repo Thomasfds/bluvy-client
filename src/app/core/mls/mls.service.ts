@@ -153,6 +153,7 @@ export class MlsService {
       const POLLS_PER_ROUND = 3;
       const POLL_DELAY_MS   = 2000;
       let currentRole: 'initiator' | 'joiner' | 'already_initialized' = role;
+      let round = 0;
 
       while (true) {
         if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
@@ -169,6 +170,23 @@ export class MlsService {
 
           const joined = await this.fetchAndProcessPendingWelcome(conversationId, user, device);
           if (joined) return;
+        }
+
+        round++;
+        if (round >= 2) {
+          // Deadlock escape: we are stuck waiting for a Welcome.
+          // Force a group reset on the backend by ACKing all pending welcomes,
+          // clearing local group state, and retrying ensureGroup.
+          if (!environment.production) console.warn('[MLS] ensureGroupReady: stuck waiting for Welcome, forcing group reset for', conversationId);
+          try {
+            const welcomes = await this.mlsRepo.getPendingWelcomes(conversationId);
+            for (const item of welcomes.data) {
+              await this.mlsRepo.ackWelcome(item.id).catch(() => {});
+            }
+            await this.clearConversationGroup(conversationId, user, device);
+          } catch (err) {
+            console.error('[MLS] ensureGroupReady: failed during deadlock escape', err);
+          }
         }
 
         const refreshed = await this.mlsRepo.ensureGroup(conversationId);

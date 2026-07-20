@@ -592,6 +592,10 @@ export class MlsCoordinatorService extends MlsCoordinatorBase {
         return;
       }
       // No pending Welcome available — leave EMPTY, do not retry.
+      // Since recovery failed and there are no Welcomes, the local state is permanently
+      // forked/broken. Clear the local group state to allow re-initialization.
+      if (!environment.production) console.warn('[MLS:coordinator] recoverFromFailed: no pending welcome found, clearing local group state to trigger reset', convId);
+      await this.mlsSvc.clearConversationGroup(convId, user, device);
     } catch (err) {
       console.warn('[MLS:coordinator] recoverFromFailed attempt', attempts, 'for', convId, ':', err);
       this.transitionState(convId, ConversationMlsState.Failed);

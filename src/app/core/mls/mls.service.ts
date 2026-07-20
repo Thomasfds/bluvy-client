@@ -1120,6 +1120,19 @@ export class MlsService {
           continue;
         }
       } catch (err) {
+        if (err instanceof HttpErrorResponse && (err.status === 403 || err.status === 404)) {
+          if (!environment.production) console.warn('[MLS] removeRevokedDevice: conversation not found or access forbidden, clearing state for conv', convId);
+          await this.storage.update<StoredMlsState>(scope, async (current) => {
+            if (current && current.groupStates) {
+              delete current.groupStates[convId];
+              if (current.conversations) delete current.conversations[convId];
+              current.updatedAt = Date.now();
+              return current;
+            }
+            return null;
+          });
+          continue;
+        }
         console.warn('[MLS] removeRevokedDevice: failed to acquire commit lock for conv', convId, '— proceeding without it', err);
       }
 

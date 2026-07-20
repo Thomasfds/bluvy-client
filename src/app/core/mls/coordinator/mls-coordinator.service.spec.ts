@@ -1,5 +1,6 @@
-import { TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { TestBed, fakeAsync, tick, flush } from '@angular/core/testing';
 import { MlsCoordinatorService } from './mls-coordinator.service';
+import { ConversationMlsState } from './mls-coordinator.types';
 import { MlsService } from '../mls.service';
 import { MessageCacheService } from '../../conversation/message-cache.service';
 import { PendingDecryptRepository } from '../repositories/pending-decrypt.repository';
@@ -18,10 +19,24 @@ describe('MlsCoordinatorService', () => {
   const mockDevice: DeviceInfo = { id: 'device-1', name: 'Web Client', platform: 'web' };
 
   beforeEach(() => {
-    mockMlsSvc = jasmine.createSpyObj<MlsService>('MlsService', ['decryptMessage']);
+    mockMlsSvc = jasmine.createSpyObj<MlsService>('MlsService', [
+      'decryptMessage',
+      'hasGroupState',
+      'processIncomingCommit',
+      'catchUpMissedCommits',
+      'ensureGroupReady',
+      'processWelcomeForConversation',
+      'fetchAndProcessPendingWelcome',
+      'clearConversationGroup',
+    ]);
     mockMessageCacheSvc = jasmine.createSpyObj<MessageCacheService>('MessageCacheService', ['store']);
-    mockPendingRepo = jasmine.createSpyObj<PendingDecryptRepository>('PendingDecryptRepository', ['enqueue', 'remove', 'markAttempt']);
+    mockPendingRepo = jasmine.createSpyObj<PendingDecryptRepository>('PendingDecryptRepository', ['enqueue', 'remove', 'markAttempt', 'getAll']);
     mockWatchdog = jasmine.createSpyObj<MlsWatchdogService>('MlsWatchdogService', ['watch', 'unwatch']);
+
+    // Sane defaults so paths not under test (recovery timers, replay) don't blow up.
+    mockMlsSvc.fetchAndProcessPendingWelcome.and.returnValue(Promise.resolve(false));
+    mockMlsSvc.clearConversationGroup.and.returnValue(Promise.resolve());
+    mockPendingRepo.getAll.and.returnValue(Promise.resolve([]));
 
     TestBed.configureTestingModule({
       providers: [
@@ -94,4 +109,164 @@ describe('MlsCoordinatorService', () => {
     expect(resultState).toBe('pending_decrypt');
     expect(mockPendingRepo.enqueue).toHaveBeenCalled();
   }));
+
+  // ── trackCommitOutcome / FAILED safety net ────────────────────────────────
+  // Regression coverage for the commit-race fork this whole session was about:
+  // a device stuck applying bad/forked commits must eventually be marked
+  // FAILED (surfacing the "reestablish encryption" button) instead of failing
+  // silently forever.
+  describe('trackCommitOutcome (via processIncomingCommit / catchUpMissedCommits)', () => {
+    beforeEach(() => {
+      // READY from a cold start: hasGroupState (used by getOrDeriveState) says yes.
+      mockMlsSvc.hasGroupState.and.returnValue(Promise.resolve(true));
+    });
+
+    it('marks the conversation FAILED and emits conversationFailed$ after 3 consecutive commit failures', fakeAsync(() => {
+      mockMlsSvc.processIncomingCommit.and.returnValue(Promise.reject(new Error('EpochTooOld')));
+
+      let failedEvent: { conversationId: string } | undefined;
+      service.conversationFailed$.subscribe(evt => { failedEvent = evt; });
+
+      // 1st and 2nd failures: below threshold, state returns to READY each time.
+      service.processIncomingCommit('conv-x', 'commit-1', 1, mockUser, mockDevice).catch(() => {});
+      tick();
+      expect(service.getConversationState('conv-x')).toBe(ConversationMlsState.Ready);
+      expect(failedEvent).toBeUndefined();
+
+      service.processIncomingCommit('conv-x', 'commit-2', 2, mockUser, mockDevice).catch(() => {});
+      tick();
+      expect(service.getConversationState('conv-x')).toBe(ConversationMlsState.Ready);
+      expect(failedEvent).toBeUndefined();
+
+      // 3rd consecutive failure: crosses MAX_COMMIT_FAILURES (3) -> FAILED.
+      service.processIncomingCommit('conv-x', 'commit-3', 3, mockUser, mockDevice).catch(() => {});
+      tick();
+
+      expect(service.getConversationState('conv-x')).toBe(ConversationMlsState.Failed);
+      expect(failedEvent).toEqual({ conversationId: 'conv-x' });
+
+      // scheduleFailedRecovery queued a timer (5s backoff) — drain it so
+      // fakeAsync doesn't complain about a pending timer at teardown.
+      flush();
+    }));
+
+    it('resets the failure counter on a successful commit, so 2 failures after a success do not trip FAILED', fakeAsync(() => {
+      let failedEvent: { conversationId: string } | undefined;
+      service.conversationFailed$.subscribe(evt => { failedEvent = evt; });
+
+      mockMlsSvc.processIncomingCommit.and.returnValue(Promise.reject(new Error('EpochTooOld')));
+      service.processIncomingCommit('conv-y', 'commit-1', 1, mockUser, mockDevice).catch(() => {});
+      tick();
+      expect(service.getConversationState('conv-y')).toBe(ConversationMlsState.Ready);
+
+      // A success in between must reset the consecutive-failure count to 0.
+      mockMlsSvc.processIncomingCommit.and.returnValue(Promise.resolve());
+      service.processIncomingCommit('conv-y', 'commit-2', 2, mockUser, mockDevice).catch(() => {});
+      tick();
+      expect(service.getConversationState('conv-y')).toBe(ConversationMlsState.Ready);
+
+      mockMlsSvc.processIncomingCommit.and.returnValue(Promise.reject(new Error('EpochTooOld')));
+      service.processIncomingCommit('conv-y', 'commit-3', 3, mockUser, mockDevice).catch(() => {});
+      tick();
+      service.processIncomingCommit('conv-y', 'commit-4', 4, mockUser, mockDevice).catch(() => {});
+      tick();
+
+      // Only 2 consecutive failures since the reset — must NOT be FAILED yet.
+      expect(service.getConversationState('conv-y')).toBe(ConversationMlsState.Ready);
+      expect(failedEvent).toBeUndefined();
+    }));
+
+    it('shares the failure counter between processIncomingCommit and catchUpMissedCommits', fakeAsync(() => {
+      let failedEvent: { conversationId: string } | undefined;
+      service.conversationFailed$.subscribe(evt => { failedEvent = evt; });
+
+      // Rejections are assigned immediately before each call (rather than
+      // batched upfront) so no rejected promise sits unattached across a
+      // tick() — that would trip the browser's unhandled-rejection detector.
+      mockMlsSvc.processIncomingCommit.and.returnValue(Promise.reject(new Error('EpochTooOld')));
+      service.processIncomingCommit('conv-z', 'commit-1', 1, mockUser, mockDevice).catch(() => {});
+      tick();
+
+      mockMlsSvc.catchUpMissedCommits.and.returnValue(Promise.reject(new Error('EpochTooOld')));
+      service.catchUpMissedCommits('conv-z', mockUser, mockDevice).catch(() => {});
+      tick();
+
+      mockMlsSvc.processIncomingCommit.and.returnValue(Promise.reject(new Error('EpochTooOld')));
+      service.processIncomingCommit('conv-z', 'commit-2', 2, mockUser, mockDevice).catch(() => {});
+      tick();
+
+      // 3 consecutive failures across BOTH entry points -> FAILED.
+      expect(service.getConversationState('conv-z')).toBe(ConversationMlsState.Failed);
+      expect(failedEvent).toEqual({ conversationId: 'conv-z' });
+
+      flush();
+    }));
+
+    it('derives wasReady via getOrDeriveState on a cold start instead of silently skipping the ApplyingCommit transition', fakeAsync(() => {
+      // Nothing has touched 'conv-cold' yet — the internal states map has no
+      // entry for it. Before the fix, wasReady was read from the raw map
+      // (always undefined on cold start), so a failing commit here would
+      // never count towards the failure threshold.
+      mockMlsSvc.processIncomingCommit.and.returnValue(Promise.reject(new Error('EpochTooOld')));
+
+      service.processIncomingCommit('conv-cold', 'commit-1', 1, mockUser, mockDevice).catch(() => {});
+      tick();
+
+      // hasGroupState() must have been consulted to derive the initial state.
+      expect(mockMlsSvc.hasGroupState).toHaveBeenCalledWith('conv-cold', mockUser, mockDevice);
+      // And the watchdog must have observed the READY -> APPLYING_COMMIT -> READY
+      // dance, proving wasReady was correctly derived as true (not skipped).
+      expect(mockWatchdog.watch).toHaveBeenCalledWith('conv-cold', ConversationMlsState.ApplyingCommit);
+      expect(service.getConversationState('conv-cold')).toBe(ConversationMlsState.Ready);
+    }));
+  });
+
+  // ── FAILED -> EMPTY reset guard ────────────────────────────────────────────
+  // Regression test for the bug that blocked resending messages: ensureGroupReady
+  // and processWelcome used to try to transition directly out of FAILED into
+  // INITIALIZING/JOINING, which MlsStateTransitionGuard forbids (only
+  // FAILED -> EMPTY is allowed), throwing MlsAssertionError instead of retrying.
+  describe('FAILED -> EMPTY reset guard', () => {
+    async function driveToFailed(convId: string): Promise<void> {
+      mockMlsSvc.hasGroupState.and.returnValue(Promise.resolve(true));
+      mockMlsSvc.processIncomingCommit.and.returnValue(Promise.reject(new Error('EpochTooOld')));
+      for (let i = 0; i < 3; i++) {
+        await service.processIncomingCommit(convId, `commit-${i}`, i, mockUser, mockDevice).catch(() => {});
+      }
+    }
+
+    it('ensureGroupReady resets FAILED -> EMPTY before proceeding to INITIALIZING, instead of throwing', fakeAsync(() => {
+      driveToFailed('conv-fail-1');
+      tick();
+      expect(service.getConversationState('conv-fail-1')).toBe(ConversationMlsState.Failed);
+
+      mockMlsSvc.ensureGroupReady.and.returnValue(Promise.resolve());
+
+      let thrown: unknown;
+      service.ensureGroupReady('conv-fail-1', 'did:plc:bob', mockUser, mockDevice).catch(err => { thrown = err; });
+      tick();
+
+      expect(thrown).toBeUndefined();
+      expect(service.getConversationState('conv-fail-1')).toBe(ConversationMlsState.Ready);
+
+      flush();
+    }));
+
+    it('processWelcome resets FAILED -> EMPTY before proceeding to JOINING, instead of throwing', fakeAsync(() => {
+      driveToFailed('conv-fail-2');
+      tick();
+      expect(service.getConversationState('conv-fail-2')).toBe(ConversationMlsState.Failed);
+
+      mockMlsSvc.processWelcomeForConversation.and.returnValue(Promise.resolve());
+
+      let thrown: unknown;
+      service.processWelcome('welcome-1', 'welcome-b64', 'conv-fail-2', mockUser, mockDevice).catch(err => { thrown = err; });
+      tick();
+
+      expect(thrown).toBeUndefined();
+      expect(service.getConversationState('conv-fail-2')).toBe(ConversationMlsState.Ready);
+
+      flush();
+    }));
+  });
 });

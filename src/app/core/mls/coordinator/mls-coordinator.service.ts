@@ -4,6 +4,7 @@ import { environment } from '../../../../environments/environment';
 import type { UserProfile }      from '../../auth/auth.types';
 import type { DeviceInfo }       from '../../device/device.types';
 import { MlsService }            from '../mls.service';
+import { AuthService }           from '../../auth/auth.service';
 import { MessageCacheService } from '../../conversation/message-cache.service';
 import type { CachedMessage } from '../../conversation/conversation.types';
 import { InitializationBarrier }    from '../state-machine/initialization-barrier';
@@ -66,6 +67,7 @@ export class MlsCoordinatorService extends MlsCoordinatorBase {
   private readonly messageCacheSvc = inject(MessageCacheService);
   private readonly pendingRepo     = inject(PendingDecryptRepository);
   private readonly watchdog        = inject(MlsWatchdogService);
+  private readonly authSvc         = inject(AuthService);
 
   private readonly barrier = new InitializationBarrier();
 
@@ -122,6 +124,20 @@ export class MlsCoordinatorService extends MlsCoordinatorBase {
   // Called by BackupService at construction time to avoid a circular DI cycle.
   setBackupService(svc: BackupEnqueuerLike): void {
     this.backupSvcRef = svc;
+  }
+
+  constructor() {
+    super();
+    this.mlsSvc.epochConflict$.subscribe(event => {
+      console.error('[MLS:coordinator] Epoch conflict (409) event received for', event.conversationId, '— marking FAILED.');
+      this.transitionState(event.conversationId, ConversationMlsState.Failed);
+      this._conversationFailed$$.next({ conversationId: event.conversationId });
+      const user = this.authSvc.currentUser();
+      const device = this.authSvc.currentDevice();
+      if (user && device) {
+        this.scheduleFailedRecovery(event.conversationId, user, device);
+      }
+    });
   }
 
   // ── Session ───────────────────────────────────────────────────────────────

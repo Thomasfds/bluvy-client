@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
+import { Subject } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   acceptAll,
@@ -91,6 +92,8 @@ export class MlsService {
 
   // Registered by BackupService at construction time to avoid a circular DI cycle.
   private backupSvcRef: BackupServiceLike | null = null;
+
+  readonly epochConflict$ = new Subject<{ conversationId: string }>();
 
   setBackupService(svc: BackupServiceLike): void {
     this.backupSvcRef = svc;
@@ -802,10 +805,20 @@ export class MlsService {
     if (shouldSkip) return;
 
     // Network: post Welcome and Commit atomically (after the storage lock).
-    const stored = await this.mlsRepo.postCommit(conversationId, commitB64, newEpoch, {
-      targetDeviceId: newDeviceId,
-      welcome: welcomeB64,
-    });
+    let stored;
+    try {
+      stored = await this.mlsRepo.postCommit(conversationId, commitB64, newEpoch, {
+        targetDeviceId: newDeviceId,
+        welcome: welcomeB64,
+      });
+    } catch (err) {
+      if (err instanceof HttpErrorResponse && err.status === 409) {
+        console.warn('[MLS] provisionDevice: Epoch Conflict (409) detected. Clearing local state to force self-healing.', err);
+        await this.clearConversationGroup(conversationId, user, device);
+        this.epochConflict$.next({ conversationId });
+      }
+      throw err;
+    }
 
     // The backend enforces UNIQUE(conversationId, epoch) and is idempotent on
     // conflict: if another device (e.g. another of our own devices reacting
@@ -1189,6 +1202,11 @@ export class MlsService {
         try {
           stored = await this.mlsRepo.postCommit(convId, serializedCommit, Number(newState.groupContext.epoch));
         } catch (err) {
+          if (err instanceof HttpErrorResponse && err.status === 409) {
+            console.warn('[MLS] removeRevokedDevice: Epoch Conflict (409) detected. Clearing local state to force self-healing.', err);
+            await this.clearConversationGroup(convId, user, device);
+            this.epochConflict$.next({ conversationId: convId });
+          }
           console.error('[MLS] removeRevokedDevice: failed to post Remove commit for conv', convId, err);
           return null;
         }

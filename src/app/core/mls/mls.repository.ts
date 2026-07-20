@@ -78,10 +78,15 @@ export class MlsRepository {
     return validateKeyPackagesForParticipantResponse(raw);
   }
 
-  async postCommit(conversationId: string, commit: string, epoch: number): Promise<MlsCommitItem> {
+  async postCommit(
+    conversationId: string,
+    commit: string,
+    epoch: number,
+    welcome?: { targetDeviceId: string; welcome: string },
+  ): Promise<MlsCommitItem> {
     const raw = await this.apiClient.post(
       `/v1/conversations/${encodeURIComponent(conversationId)}/mls-commit`,
-      { commit, epoch },
+      { commit, epoch, welcome },
     );
     return validatePostCommitResponse(raw);
   }

@@ -752,10 +752,11 @@ export class MlsService {
 
     if (shouldSkip) return;
 
-    // Network: post Welcome and Commit (after the storage lock).
-    await this.mlsRepo.postWelcome(newDeviceId, welcomeB64, conversationId);
-
-    const stored = await this.mlsRepo.postCommit(conversationId, commitB64, newEpoch);
+    // Network: post Welcome and Commit atomically (after the storage lock).
+    const stored = await this.mlsRepo.postCommit(conversationId, commitB64, newEpoch, {
+      targetDeviceId: newDeviceId,
+      welcome: welcomeB64,
+    });
 
     // The backend enforces UNIQUE(conversationId, epoch) and is idempotent on
     // conflict: if another device (e.g. another of our own devices reacting
